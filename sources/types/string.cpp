@@ -1,6 +1,6 @@
-#include "covscript/types/string.hpp"
-#include "covscript/types/exception.hpp"
-#include "third-party/utfcpp/utf8.h"
+#include <covscript/types/string.hpp>
+#include <covscript/types/exception.hpp>
+#include <utfcpp/utf8.h>
 
 namespace cs::unicode {
 	bool is_valid(byte_string_view str) noexcept
