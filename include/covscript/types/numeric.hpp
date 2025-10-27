@@ -2,6 +2,7 @@
 #include <type_traits>
 #include <cstdint>
 #include <cstdlib>
+#include <string>
 
 namespace cs {
 	using float_t = long double;
@@ -39,7 +40,7 @@ namespace cs {
 
 		numeric_t(const numeric_t &rhs) : data(rhs.data), type(rhs.type) {}
 
-		numeric_t(numeric_t &&rhs) noexcept: data(rhs.data), type(rhs.type) {}
+		numeric_t(numeric_t &&rhs) noexcept : data(rhs.data), type(rhs.type) {}
 
 		~numeric_t() = default;
 
@@ -58,7 +59,7 @@ namespace cs {
 			}
 		}
 
-		template<typename T, typename = std::enable_if_t<!std::is_same<std::decay_t<T>, numeric_t>::value>>
+		template <typename T, typename = std::enable_if_t<!std::is_same<std::decay_t<T>, numeric_t>::value>>
 		numeric_t operator+(T &&rhs) const noexcept
 		{
 			if (type)
@@ -82,7 +83,7 @@ namespace cs {
 			}
 		}
 
-		template<typename T, typename = std::enable_if_t<!std::is_same<std::decay_t<T>, numeric_t>::value>>
+		template <typename T, typename = std::enable_if_t<!std::is_same<std::decay_t<T>, numeric_t>::value>>
 		numeric_t operator-(T &&rhs) const noexcept
 		{
 			if (type)
@@ -106,7 +107,7 @@ namespace cs {
 			}
 		}
 
-		template<typename T, typename = std::enable_if_t<!std::is_same<std::decay_t<T>, numeric_t>::value>>
+		template <typename T, typename = std::enable_if_t<!std::is_same<std::decay_t<T>, numeric_t>::value>>
 		numeric_t operator*(T &&rhs) const noexcept
 		{
 			if (type)
@@ -134,7 +135,7 @@ namespace cs {
 			}
 		}
 
-		template<typename T, typename = std::enable_if_t<!std::is_same<std::decay_t<T>, numeric_t>::value>>
+		template <typename T, typename = std::enable_if_t<!std::is_same<std::decay_t<T>, numeric_t>::value>>
 		numeric_t operator/(T &&rhs) const noexcept
 		{
 			if (type)
@@ -181,7 +182,7 @@ namespace cs {
 			}
 		}
 
-		template<typename T, typename = std::enable_if_t<!std::is_same<std::decay_t<T>, numeric_t>::value>>
+		template <typename T, typename = std::enable_if_t<!std::is_same<std::decay_t<T>, numeric_t>::value>>
 		bool operator<(T &&rhs) const noexcept
 		{
 			if (type)
@@ -205,7 +206,7 @@ namespace cs {
 			}
 		}
 
-		template<typename T, typename = std::enable_if_t<!std::is_same<std::decay_t<T>, numeric_t>::value>>
+		template <typename T, typename = std::enable_if_t<!std::is_same<std::decay_t<T>, numeric_t>::value>>
 		bool operator<=(T &&rhs) const noexcept
 		{
 			if (type)
@@ -229,7 +230,7 @@ namespace cs {
 			}
 		}
 
-		template<typename T, typename = std::enable_if_t<!std::is_same<std::decay_t<T>, numeric_t>::value>>
+		template <typename T, typename = std::enable_if_t<!std::is_same<std::decay_t<T>, numeric_t>::value>>
 		bool operator>(T &&rhs) const noexcept
 		{
 			if (type)
@@ -253,7 +254,7 @@ namespace cs {
 			}
 		}
 
-		template<typename T, typename = std::enable_if_t<!std::is_same<std::decay_t<T>, numeric_t>::value>>
+		template <typename T, typename = std::enable_if_t<!std::is_same<std::decay_t<T>, numeric_t>::value>>
 		bool operator>=(T &&rhs) const noexcept
 		{
 			if (type)
@@ -277,7 +278,7 @@ namespace cs {
 			}
 		}
 
-		template<typename T, typename = std::enable_if_t<!std::is_same<std::decay_t<T>, numeric_t>::value>>
+		template <typename T, typename = std::enable_if_t<!std::is_same<std::decay_t<T>, numeric_t>::value>>
 		bool operator==(T &&rhs) const noexcept
 		{
 			if (type)
@@ -301,7 +302,7 @@ namespace cs {
 			}
 		}
 
-		template<typename T, typename = std::enable_if_t<!std::is_same<std::decay_t<T>, numeric_t>::value>>
+		template <typename T, typename = std::enable_if_t<!std::is_same<std::decay_t<T>, numeric_t>::value>>
 		bool operator!=(T &&rhs) const noexcept
 		{
 			if (type)
@@ -376,6 +377,14 @@ namespace cs {
 				return data._int;
 			else
 				return data._num;
+		}
+
+		std::string to_string() const
+		{
+			if (type)
+				return std::to_string(data._int);
+			else
+				return std::to_string(data._num);
 		}
 	};
 }
