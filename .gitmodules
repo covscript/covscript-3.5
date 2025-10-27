@@ -1,0 +1,3 @@
+[submodule "third-party"]
+	path = third-party
+	url = git@github.com:covscript/covscript-deps-3.5.git

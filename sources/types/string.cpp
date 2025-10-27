@@ -1,0 +1,39 @@
+#include "covscript/types/string.hpp"
+#include "covscript/types/exception.hpp"
+#include "third-party/utfcpp/utf8.h"
+
+namespace cs::unicode {
+	bool is_valid(byte_string_view str) noexcept
+	{
+		return utf8::is_valid(str);
+	}
+
+	uchar_t next(byte_string_t::const_iterator &it)
+	{
+		try {
+			return utf8::unchecked::next(it);
+		}
+		catch (const utf8::exception& utfcpp_ex) {
+			throw lang_error(utfcpp_ex.what());
+		}
+	}
+
+	unicode_string_t byte_to_unicode(byte_string_view str)
+	{
+		try {
+			unicode_string_t ustr;
+			utf8::utf8to32(str.begin(), str.end(), std::back_inserter(ustr));
+			return ustr;
+		}
+		catch (const utf8::exception& utfcpp_ex) {
+			throw lang_error(utfcpp_ex.what());
+		}
+	}
+
+	byte_string_t unicode_to_byte(unicode_string_view ustr) noexcept
+	{
+		byte_string_t str;
+		utf8::unchecked::utf32to8(ustr.begin(), ustr.end(), std::back_inserter(str));
+		return str;
+	}
+}
