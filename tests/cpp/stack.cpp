@@ -1,4 +1,4 @@
-#include <covscript/types/stack.hpp>
+#include <covscript/types/basic.hpp>
 #include <catch2/catch_all.hpp>
 
 using namespace cs;

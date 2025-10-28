@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.13)
 
 project(covscript)
 
+set(CMAKE_CXX_STANDARD 17)
+
 option(COVSCRIPT_ENABLE_TESTS "Build with unit tests" ON)
 
 add_subdirectory(third-party)
@@ -11,11 +13,6 @@ file(GLOB SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/sources/**/*.cpp")
 add_library(covscript STATIC ${SOURCES})
 target_include_directories(covscript PUBLIC include)
 target_include_directories(covscript PUBLIC third-party)
-
-set_target_properties(covscript PROPERTIES
-    CXX_STANDARD 17
-    CXX_STANDARD_REQUIRED ON
-)
 
 if (MSVC)
     target_compile_options(covscript PUBLIC /O2 /EHsc /utf-8 /DNDEBUG /Zc:__cplusplus /MP /w)

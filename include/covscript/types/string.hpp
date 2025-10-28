@@ -1,4 +1,5 @@
 #pragma once
+#include <covscript/types/basic.hpp>
 #include <memory>
 #include <string>
 
@@ -11,7 +12,7 @@ namespace cs {
 	using unicode_string_view = std::basic_string_view<char32_t>;
 
 	template <typename CharT,
-	          template <typename> class allocator_type_t = std::allocator>
+	          template <typename> class allocator_type_t = default_allocator>
 	class basic_string_borrower final {
 		using stl_string = std::basic_string<CharT>;
 		using stl_string_view = std::basic_string_view<CharT>;
@@ -55,7 +56,7 @@ namespace cs {
 		{
 			if (other.m_own) {
 				stl_string *p = get_allocator().allocate(1);
-				get_allocator().construct(p, *static_cast<stl_string *>(other.m_data));
+				::new (p) stl_string(*static_cast<stl_string *>(other.m_data));
 				m_data = p;
 			}
 			else
@@ -76,7 +77,7 @@ namespace cs {
 				m_own = other.m_own;
 				if (other.m_own) {
 					stl_string *p = get_allocator().allocate(1);
-					get_allocator().construct(p, *static_cast<stl_string *>(other.m_data));
+					::new (p) stl_string(*static_cast<stl_string *>(other.m_data));
 					m_data = p;
 				}
 				else
@@ -104,15 +105,22 @@ namespace cs {
 
 		stl_string_view view() const noexcept
 		{
-			if (m_own) {
+			if (m_own)
 				return *static_cast<stl_string *>(m_data);
-			}
-			else if (m_data) {
+			else if (m_data)
 				return stl_string_view(static_cast<CharT *>(m_data));
-			}
-			else {
+			else
 				return stl_string_view{};
-			}
+		}
+
+		const CharT *data() const noexcept
+		{
+			if (m_own)
+				return static_cast<stl_string *>(m_data)->data();
+			else if (m_data)
+				return static_cast<CharT *>(m_data);
+			else
+				return nullptr;
 		}
 
 		operator stl_string_view() const noexcept

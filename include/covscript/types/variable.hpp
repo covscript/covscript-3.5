@@ -7,6 +7,7 @@
 #include <cstring>
 #include <cstdint>
 #include <bitset>
+#include <new>
 
 namespace cs_impl {
 	// Name Demangle
@@ -298,81 +299,28 @@ cs::byte_string_borrower cs_impl::to_string<cs::unicode_string_t>(const cs::unic
  * Aligned to 64 bytes cache line
  */
 #ifndef COVSCRIPT_SVO_ALIGN
-#define COVSCRIPT_SVO_ALIGN 16
-#endif
-
-#ifndef COVSCRIPT_BLOCK_ALLOCATOR_SIZE
-#define COVSCRIPT_BLOCK_ALLOCATOR_SIZE 64
+#define COVSCRIPT_SVO_ALIGN (std::hardware_destructive_interference_size)
 #endif
 
 namespace cs {
-	template <typename T,
-	          std::size_t block_size = COVSCRIPT_BLOCK_ALLOCATOR_SIZE,
-	          template <typename> class allocator_type_t = std::allocator>
-	class allocator_type {
-		allocator_type_t<T> m_alloc;
-		T *m_pool[block_size];
-		std::size_t m_offset;
-
-	public:
-		allocator_type() : m_offset(0)
-		{
-			for (std::size_t i = 0; i < block_size / 2; ++i)
-				m_pool[i] = m_alloc.allocate(1);
-			m_offset = block_size / 2;
-		}
-
-		~allocator_type()
-		{
-			for (std::size_t i = 0; i < m_offset; ++i)
-				m_alloc.deallocate(m_pool[i], 1);
-		}
-
-		allocator_type(const allocator_type &) = delete;
-		allocator_type &operator=(const allocator_type &) = delete;
-
-		inline T *allocate(std::size_t n)
-		{
-			if (n == 1 && m_offset > 0)
-				return m_pool[--m_offset];
-			else
-				return m_alloc.allocate(n);
-		}
-
-		inline void deallocate(T *ptr, std::size_t n)
-		{
-			if (n == 1 && m_offset < block_size)
-				m_pool[m_offset++] = ptr;
-			else
-				m_alloc.deallocate(ptr, n);
-		}
-	};
-
-#ifdef COVSCRIPT_COMPATIBILITY_MODE
-	template <typename T>
-	using default_allocator = std::allocator<T>;
-#else
-	template <typename T>
-	using default_allocator = allocator_type<T>;
-#endif
-
-	template <typename T>
-	static default_allocator<T> &get_allocator()
-	{
-		static default_allocator<T> allocator;
-		return allocator;
-	}
-
 	struct null_t {
 	};
 
-	template<std::size_t align_size>
+	template <std::size_t align_size,
+	          template <typename> class allocator_type_t = default_allocator>
 	class basic_var final {
+		template <typename T>
+		static allocator_type_t<T> &get_allocator()
+		{
+			static allocator_type_t<T> allocator;
+			return allocator;
+		}
+
 		static_assert(align_size % 8 == 0, "align_size must be a multiple of 8.");
 		static_assert(align_size >= alignof(std::max_align_t),
 		              "align_size must greater than alignof(std::max_align_t).");
 
-		using aligned_storage_t = std::aligned_storage_t<align_size - sizeof(void *)>;
+		using aligned_storage_t = std::aligned_storage_t<align_size - alignof(std::max_align_t), alignof(std::max_align_t)>;
 
 		enum class var_op {
 			access,
@@ -388,12 +336,12 @@ namespace cs {
 			detach,
 		};
 
-		union var_op_args {
-			std::uint8_t _non_trivial[sizeof(cs::byte_string_borrower)];
+		union var_op_result {
 			const std::type_info *_typeid;
-			cs::integer_t _int;
+			integer_t _int;
 			std::size_t _hash;
 			void *_ptr;
+			var_op_result() : _ptr(nullptr) {}
 		};
 
 		template <typename T>
@@ -403,44 +351,46 @@ namespace cs {
 			{
 				::new (&val->m_store.buffer) T(std::forward<ArgsT>(args)...);
 			}
-			static void dispatcher(var_op op, var_op_args *args, const basic_var *val)
+			static var_op_result dispatcher(var_op op, const basic_var *lhs, void *rhs)
 			{
-				const T *ptr = reinterpret_cast<const T *>(&val->m_store.buffer);
+				const T *ptr = reinterpret_cast<const T *>(&lhs->m_store.buffer);
+				var_op_result result;
 				switch (op) {
 				case var_op::access:
-					args->_ptr = const_cast<T *>(ptr);
+					result._ptr = const_cast<T *>(ptr);
 					break;
 				case var_op::compare:
-					args->_int = cs_impl::compare(*ptr, *static_cast<const T *>(args->_ptr));
+					result._int = cs_impl::compare(*ptr, *static_cast<const T *>(rhs));
 					break;
 				case var_op::copy:
-					::new (&static_cast<basic_var *>(args->_ptr)->m_store.buffer) T(*ptr);
+					::new (&static_cast<basic_var *>(rhs)->m_store.buffer) T(*ptr);
 					break;
 				case var_op::move:
-					::new (&static_cast<basic_var *>(args->_ptr)->m_store.buffer) T(std::move(*ptr));
+					::new (&static_cast<basic_var *>(rhs)->m_store.buffer) T(std::move(*ptr));
 					break;
 				case var_op::destroy:
 					ptr->~T();
 					break;
 				case var_op::rtti_type:
-					args->_typeid = &typeid(T);
+					result._typeid = &typeid(T);
 					break;
 				case var_op::type_name:
-					::new (args->_non_trivial) cs::byte_string_borrower(cs_impl::get_name_of_type<T>());
+					*static_cast<byte_string_borrower *>(rhs) = cs_impl::get_name_of_type<T>();
 					break;
 				case var_op::to_integer:
-					args->_int = cs_impl::to_integer(*ptr);
+					result._int = cs_impl::to_integer(*ptr);
 					break;
 				case var_op::to_string:
-					::new (args->_non_trivial) cs::byte_string_borrower(cs_impl::to_string(*ptr));
+					*static_cast<byte_string_borrower *>(rhs) = cs_impl::to_string(*ptr);
 					break;
 				case var_op::hash:
-					args->_hash = cs_impl::hash<T>(*ptr);
+					result._hash = cs_impl::hash<T>(*ptr);
 					break;
 				case var_op::detach:
 					cs_impl::detach(*const_cast<T *>(ptr));
 					break;
 				}
+				return result;
 			}
 		};
 
@@ -453,26 +403,27 @@ namespace cs {
 				::new (ptr) T(std::forward<ArgsT>(args)...);
 				val->m_store.ptr = ptr;
 			}
-			static void dispatcher(var_op op, var_op_args *args, const basic_var *val)
+			static var_op_result dispatcher(var_op op, const basic_var *lhs, void *rhs)
 			{
-				const T *ptr = static_cast<const T *>(val->m_store.ptr);
+				const T *ptr = static_cast<const T *>(lhs->m_store.ptr);
+				var_op_result result;
 				switch (op) {
 				case var_op::access:
-					args->_ptr = const_cast<T *>(ptr);
+					result._ptr = const_cast<T *>(ptr);
 					break;
 				case var_op::compare:
-					args->_int = cs_impl::compare(*ptr, *static_cast<const T *>(args->_ptr));
+					result._int = cs_impl::compare(*ptr, *static_cast<const T *>(rhs));
 					break;
 				case var_op::copy: {
 					T *nptr = get_allocator<T>().allocate(1);
 					::new (nptr) T(*ptr);
-					static_cast<basic_var *>(args->_ptr)->m_store.ptr = nptr;
+					static_cast<basic_var *>(rhs)->m_store.ptr = nptr;
 					break;
 				}
 				case var_op::move: {
 					T *nptr = get_allocator<T>().allocate(1);
 					::new (nptr) T(std::move(*ptr));
-					static_cast<basic_var *>(args->_ptr)->m_store.ptr = nptr;
+					static_cast<basic_var *>(rhs)->m_store.ptr = nptr;
 					break;
 				}
 				case var_op::destroy:
@@ -480,28 +431,29 @@ namespace cs {
 					get_allocator<T>().deallocate(const_cast<T *>(ptr), 1);
 					break;
 				case var_op::rtti_type:
-					args->_typeid = &typeid(T);
+					result._typeid = &typeid(T);
 					break;
 				case var_op::type_name:
-					::new (args->_non_trivial) cs::byte_string_borrower(cs_impl::get_name_of_type<T>());
+					*static_cast<byte_string_borrower *>(rhs) = cs_impl::get_name_of_type<T>();
 					break;
 				case var_op::to_integer:
-					args->_int = cs_impl::to_integer(*ptr);
+					result._int = cs_impl::to_integer(*ptr);
 					break;
 				case var_op::to_string:
-					::new (args->_non_trivial) cs::byte_string_borrower(cs_impl::to_string(*ptr));
+					*static_cast<byte_string_borrower *>(rhs) = cs_impl::to_string(*ptr);
 					break;
 				case var_op::hash:
-					args->_hash = cs_impl::hash<T>(*ptr);
+					result._hash = cs_impl::hash<T>(*ptr);
 					break;
 				case var_op::detach:
 					cs_impl::detach(*const_cast<T *>(ptr));
 					break;
 				}
+				return result;
 			}
 		};
 
-		using dispatcher_t = void (*)(var_op, var_op_args *, const basic_var *val);
+		using dispatcher_t = var_op_result (*)(var_op, const basic_var *, void *);
 
 		template <typename T>
 		using dispatcher_class = std::conditional_t<(sizeof(T) > sizeof(aligned_storage_t)),
@@ -526,7 +478,7 @@ namespace cs {
 		inline void destroy_store()
 		{
 			if (m_dispatcher != nullptr) {
-				m_dispatcher(var_op::destroy, nullptr, this);
+				m_dispatcher(var_op::destroy, this, nullptr);
 				m_dispatcher = nullptr;
 			}
 		}
@@ -535,10 +487,8 @@ namespace cs {
 		{
 			destroy_store();
 			if (other.m_dispatcher != nullptr) {
+				other.m_dispatcher(var_op::copy, &other, this);
 				m_dispatcher = other.m_dispatcher;
-				var_op_args args;
-				args._ptr = this;
-				m_dispatcher(var_op::copy, &args, &other);
 			}
 		}
 
@@ -546,10 +496,9 @@ namespace cs {
 		{
 			destroy_store();
 			if (other.m_dispatcher != nullptr) {
+				other.m_dispatcher(var_op::move, &other, this);
 				m_dispatcher = other.m_dispatcher;
-				var_op_args args;
-				args._ptr = this;
-				m_dispatcher(var_op::move, &args, &other);
+				other.m_dispatcher = nullptr;
 			}
 		}
 
@@ -609,22 +558,22 @@ namespace cs {
 
 		const std::type_info &type() const
 		{
-			if (usable()) {
-				var_op_args args;
-				m_dispatcher(var_op::rtti_type, &args, this);
-				return *args._typeid;
-			}
+			if (usable())
+				return *m_dispatcher(var_op::rtti_type, this, nullptr)._typeid;
 			else
 				return typeid(null_t);
 		}
 
+		template <typename T>
+		bool is_type_of() const
+		{
+			return usable() ? m_dispatcher == &dispatcher_class<std::decay_t<T>>::dispatcher : std::is_same_v<T, null_t>;
+		}
+
 		integer_t to_integer() const
 		{
-			if (usable()) {
-				var_op_args args;
-				m_dispatcher(var_op::to_integer, &args, this);
-				return args._int;
-			}
+			if (usable())
+				return m_dispatcher(var_op::to_integer, this, nullptr)._int;
 			else
 				return 0;
 		}
@@ -637,12 +586,9 @@ namespace cs {
 		byte_string_borrower to_string() const
 		{
 			if (usable()) {
-				var_op_args args;
-				m_dispatcher(var_op::to_string, &args, this);
-				byte_string_borrower *bptr = std::launder(reinterpret_cast<byte_string_borrower *>(&args._non_trivial));
-				byte_string_borrower b(std::move(*bptr));
-				bptr->~basic_string_borrower();
-				return b;
+				byte_string_borrower borrower;
+				m_dispatcher(var_op::to_string, this, &borrower);
+				return borrower;
 			}
 			else
 				return "null";
@@ -650,11 +596,8 @@ namespace cs {
 
 		std::size_t hash() const
 		{
-			if (usable()) {
-				var_op_args args;
-				m_dispatcher(var_op::hash, &args, this);
-				return args._hash;
-			}
+			if (usable())
+				return m_dispatcher(var_op::hash, this, nullptr)._hash;
 			else
 				return 0;
 		}
@@ -662,16 +605,15 @@ namespace cs {
 		void detach()
 		{
 			if (usable())
-				m_dispatcher(var_op::detach, nullptr, this);
+				m_dispatcher(var_op::detach, this, nullptr);
 		}
 
-		byte_string_view type_name() const
+		byte_string_borrower type_name() const
 		{
 			if (usable()) {
-				var_op_args args;
-				m_dispatcher(var_op::type_name, &args, this);
-				byte_string_borrower *bptr = std::launder(reinterpret_cast<byte_string_borrower *>(&args._non_trivial));
-				return bptr->view();
+				byte_string_borrower borrower;
+				m_dispatcher(var_op::type_name, this, &borrower);
+				return borrower;
 			}
 			else
 				return cs_impl::get_name_of_type<null_t>();
@@ -697,12 +639,9 @@ namespace cs {
 
 		bool compare(const basic_var &obj) const
 		{
-			if (usable() && m_dispatcher == obj.m_dispatcher) {
-				var_op_args args;
-				m_dispatcher(var_op::access, &args, &obj);
-				m_dispatcher(var_op::compare, &args, this);
-				return args._int;
-			}
+			if (usable() && m_dispatcher == obj.m_dispatcher)
+				return m_dispatcher(var_op::compare, this,
+				                    m_dispatcher(var_op::access, &obj, nullptr)._ptr)._int;
 			else
 				return obj.is_null();
 		}
@@ -717,32 +656,27 @@ namespace cs {
 			return !compare(obj);
 		}
 
-		template <typename T>
-		std::decay_t<T> &val()
+		template <typename T, typename decayed_t = std::decay_t<T>>
+		inline decayed_t &val()
 		{
-			if (is_null())
+			if (m_dispatcher == &dispatcher_class<decayed_t>::dispatcher)
+				return *static_cast<decayed_t *>(m_dispatcher(var_op::access, this, nullptr)._ptr);
+			else if (m_dispatcher == nullptr)
 				throw runtime_error("Instance null variable.");
-			using decayed_t = std::decay_t<T>;
-			if (m_dispatcher != &dispatcher_class<decayed_t>::dispatcher && type() != typeid(T))
+			else
 				throw runtime_error("Instance variable with wrong type. Provided " +
 				                    cs_impl::cxx_demangle(typeid(T).name()) + ", expected " + type_name().data());
-			var_op_args args;
-			m_dispatcher(var_op::access, &args, this);
-			return *reinterpret_cast<decayed_t *>(args._ptr);
 		}
 
-		template <typename T>
-		const std::decay_t<T> &const_val() const
-		{
-			if (is_null())
+		template <typename T, typename decayed_t = std::decay_t<T>>
+		inline const decayed_t &const_val() const {
+			if (m_dispatcher == &dispatcher_class<decayed_t>::dispatcher)
+				return *static_cast<const decayed_t *>(m_dispatcher(var_op::access, this, nullptr)._ptr);
+			else if (m_dispatcher == nullptr)
 				throw runtime_error("Instance null variable.");
-			using decayed_t = std::decay_t<T>;
-			if (m_dispatcher != &dispatcher_class<decayed_t>::dispatcher && type() != typeid(T))
+			else
 				throw runtime_error("Instance variable with wrong type. Provided " +
 				                    cs_impl::cxx_demangle(typeid(T).name()) + ", expected " + type_name().data());
-			var_op_args args;
-			m_dispatcher(var_op::access, &args, this);
-			return *reinterpret_cast<const decayed_t *>(args._ptr);
 		}
 
 		template <typename T>
