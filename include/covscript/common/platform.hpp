@@ -85,15 +85,12 @@
 // Architecture Detection
 
 #if defined(__x86_64__) || defined(_M_X64)
-#define COVSCRIPT_64BIT
 #define COVSCRIPT_ARCH_AMD64
 #define COVSCRIPT_ARCH_NAME "amd64"
 #elif defined(__i386__) || defined(_M_IX86)
-#define COVSCRIPT_32BIT
 #define COVSCRIPT_ARCH_I386
 #define COVSCRIPT_ARCH_NAME "i386"
 #elif defined(__aarch64__) || defined(_M_ARM64)
-#define COVSCRIPT_64BIT
 #define COVSCRIPT_ARCH_ARM64
 #ifdef COVSCRIPT_PLATFORM_LINUX
 #define COVSCRIPT_ARCH_NAME "aarch64"
@@ -101,42 +98,37 @@
 #define COVSCRIPT_ARCH_NAME "arm64"
 #endif
 #elif defined(__arm__) || defined(_M_ARM)
-#define COVSCRIPT_32BIT
 #define COVSCRIPT_ARCH_ARM32
 #define COVSCRIPT_ARCH_NAME "arm"
 #elif defined(__riscv)
 #if defined(__riscv_xlen) && (__riscv_xlen == 64)
-#define COVSCRIPT_64BIT
 #define COVSCRIPT_ARCH_RISCV64
 #define COVSCRIPT_ARCH_NAME "riscv64"
 #else
-#define COVSCRIPT_32BIT
 #define COVSCRIPT_ARCH_RISCV32
 #define COVSCRIPT_ARCH_NAME "riscv32"
 #endif
 #elif defined(__loongarch__)
 #if defined(__loongarch64)
-#define COVSCRIPT_64BIT
 #define COVSCRIPT_ARCH_LOONGARCH64
 #define COVSCRIPT_ARCH_NAME "loongarch64"
 #else
-#define COVSCRIPT_32BIT
 #define COVSCRIPT_ARCH_LOONGARCH32
 #define COVSCRIPT_ARCH_NAME "loongarch32"
 #endif
 #elif defined(__mips__)
 #if defined(__mips64) || defined(_LP64)
-#define COVSCRIPT_64BIT
 #define COVSCRIPT_ARCH_MIPS64
 #define COVSCRIPT_ARCH_NAME "mips64"
 #else
-#define COVSCRIPT_32BIT
 #define COVSCRIPT_ARCH_MIPS32
 #define COVSCRIPT_ARCH_NAME "mips32"
 #endif
 #else
 #define COVSCRIPT_ARCH_UNKNOWN
-#define COVSCRIPT_ARCH_NAME "unknown"
+#ifndef COVSCRIPT_ARCH_NAME
+#error COVSCRIPT_ARCH_NAME not defined. Can not detect automatically.
+#endif
 #endif
 
 namespace cs {

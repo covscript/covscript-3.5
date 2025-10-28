@@ -6,7 +6,7 @@ using namespace cs;
 TEST_CASE("var default construction", "[var]")
 {
 	var v;
-	REQUIRE(v.is_null() == false); // usable()
+	REQUIRE(v.is_null() == true);
 	REQUIRE(v.to_string().view() == "null");
 	REQUIRE(v.to_integer() == 0);
 	REQUIRE(v.hash() == 0);
@@ -15,7 +15,7 @@ TEST_CASE("var default construction", "[var]")
 TEST_CASE("var construct with numeric_t", "[var]")
 {
 	numeric_t n(42LL);
-	var v(var::make<numeric_t>(n));
+	var v = var::make<numeric_t>(n);
 
 	REQUIRE(v.usable());
 	REQUIRE(v.type() == typeid(numeric_t));
@@ -25,7 +25,7 @@ TEST_CASE("var construct with numeric_t", "[var]")
 
 TEST_CASE("var copy and move", "[var]")
 {
-	var v1(var::make<numeric_t>(123LL));
+	var v1 = var::make<numeric_t>(123LL);
 	var v2(v1); // copy constructor
 
 	REQUIRE(v2.usable());

@@ -4,6 +4,7 @@
 #include <covscript/types/string.hpp>
 #include <covscript/types/exception.hpp>
 #include <type_traits>
+#include <cstring>
 #include <cstdint>
 #include <bitset>
 
@@ -291,13 +292,12 @@ cs::byte_string_borrower cs_impl::to_string<cs::unicode_string_t>(const cs::unic
 	return cs::unicode::unicode_to_byte(str);
 }
 
-// Small Variable Optimization
-#ifndef COVSCRIPT_SVO_SIZE
-#ifdef COVSCRIPT_64BIT
-#define COVSCRIPT_SVO_SIZE 6
-#else
-#define COVSCRIPT_SVO_SIZE 14
-#endif
+/*
+ * Small Variable Optimization
+ * Aligned to 64 bytes cache line
+ */
+#ifndef COVSCRIPT_SVO_ALIGN
+#define COVSCRIPT_SVO_ALIGN 64
 #endif
 
 #ifndef COVSCRIPT_BLOCK_ALLOCATOR_SIZE
@@ -358,16 +358,16 @@ namespace cs {
 	struct null_t {
 	};
 
-	class alignas(64) var final {
+	class alignas(COVSCRIPT_SVO_ALIGN) var final {
 		class base_store {
 		public:
 			virtual ~base_store() = default;
 
 			virtual const std::type_info &type() const = 0;
 
-			virtual void svo_construct(void *) = 0;
+			virtual void svo_construct(void *) const = 0;
 
-			virtual base_store *duplicate() = 0;
+			virtual base_store *duplicate() const = 0;
 
 			virtual bool compare(const base_store *) const = 0;
 
@@ -412,12 +412,12 @@ namespace cs {
 				return typeid(T);
 			}
 
-			virtual void svo_construct(void *mem) override
+			virtual void svo_construct(void *mem) const override
 			{
 				::new (mem) store(m_data);
 			}
 
-			base_store *duplicate() override
+			base_store *duplicate() const override
 			{
 				store *ptr = get_allocator().allocate(1);
 				::new (ptr) store(m_data);
@@ -454,8 +454,8 @@ namespace cs {
 
 			void deallocate() override
 			{
-				get_allocator().deallocate(this, 1);
 				this->~store();
+				get_allocator().deallocate(this, 1);
 			}
 
 			void detach() override
@@ -489,34 +489,50 @@ namespace cs {
 			}
 		};
 
-		// Aligned to 64bit cache line
-		size_t m_svo_store[COVSCRIPT_SVO_SIZE];
+		static_assert(COVSCRIPT_SVO_ALIGN % 8 == 0, "COVSCRIPT_SVO_ALIGN must be a multiple of 8.");
+		static_assert(COVSCRIPT_SVO_ALIGN - 1 >= alignof(std::max_align_t), "COVSCRIPT_SVO_ALIGN must greater than alignof(std::max_align_t).");
 
-		std::bitset<sizeof(size_t)> m_flags;
-		enum class flags : unsigned {
-			svo_enabled = 0
-		};
+		constexpr static std::size_t store_size = COVSCRIPT_SVO_ALIGN - 1;
+		union svo_store {
+			std::uint8_t svo_data[store_size];
+			base_store *ptr;
+			svo_store() : ptr(nullptr) {}
+		} m_store;
 
-		inline bool get_flag(flags idx) const noexcept
+		struct alignas(alignof(std::uint8_t)) flag_store {
+			unsigned initialized : 1;
+			unsigned svo_enabled : 1;
+			unsigned var_protect : 1;
+			flag_store()
+			{
+				std::memset(this, false, sizeof(flag_store));
+			}
+		} m_flags;
+
+		inline base_store *get_ptr() noexcept
 		{
-			return m_flags[static_cast<unsigned>(idx)];
+			if (m_flags.svo_enabled)
+				return std::launder(reinterpret_cast<base_store *>(&m_store.svo_data));
+			else
+				return m_store.ptr;
 		}
 
-		inline void set_flag(flags idx, bool val) noexcept
+		inline const base_store *get_ptr() const noexcept
 		{
-			m_flags[static_cast<unsigned>(idx)] = val;
+			if (m_flags.svo_enabled)
+				return std::launder(reinterpret_cast<const base_store *>(&m_store.svo_data));
+			else
+				return m_store.ptr;
 		}
-
-		base_store *m_ptr = nullptr;
 
 		inline void destroy_store()
 		{
-			if (m_ptr != nullptr) {
-				if (get_flag(flags::svo_enabled))
-					m_ptr->svo_destroy();
+			if (m_flags.initialized) {
+				if (m_flags.svo_enabled)
+					reinterpret_cast<base_store *>(&m_store.svo_data)->svo_destroy();
 				else
-					m_ptr->deallocate();
-				m_ptr = nullptr;
+					m_store.ptr->deallocate();
+				m_flags.initialized = false;
 			}
 		}
 
@@ -524,31 +540,31 @@ namespace cs {
 		inline void construct_store(ArgsT &&...args)
 		{
 			destroy_store();
-			using store_type = store<T>;
-			if (sizeof(store_type) <= sizeof(m_svo_store)) {
-				m_ptr = reinterpret_cast<base_store *>(m_svo_store);
-				set_flag(flags::svo_enabled, true);
+			if (sizeof(store<T>) > store_size) {
+				m_store.ptr = store<T>::get_allocator().allocate(1);
+				::new (m_store.ptr) store<T>(std::forward<ArgsT>(args)...);
+				m_flags.svo_enabled = false;
 			}
 			else {
-				m_ptr = store_type::get_allocator().allocate(1);
-				set_flag(flags::svo_enabled, false);
+				::new (&m_store.svo_data) store<T>(std::forward<ArgsT>(args)...);
+				m_flags.svo_enabled = true;
 			}
-			::new (m_ptr) store_type(std::forward<ArgsT>(args)...);
+			m_flags.initialized = true;
 		}
 
 		inline void copy_store(const var &other)
 		{
 			destroy_store();
-			if (other.m_ptr != nullptr) {
-				if (other.get_flag(flags::svo_enabled)) {
-					m_ptr = reinterpret_cast<base_store *>(m_svo_store);
-					other.m_ptr->svo_construct(m_ptr);
-					set_flag(flags::svo_enabled, true);
+			if (other.m_flags.initialized) {
+				if (other.m_flags.svo_enabled) {
+					other.get_ptr()->svo_construct(&m_store.svo_data);
+					m_flags.svo_enabled = true;
 				}
 				else {
-					m_ptr = other.m_ptr->duplicate();
-					set_flag(flags::svo_enabled, false);
+					m_store.ptr = other.get_ptr()->duplicate();
+					m_flags.svo_enabled = false;
 				}
+				m_flags.initialized = true;
 			}
 		}
 
@@ -561,49 +577,34 @@ namespace cs {
 			return data;
 		}
 
+		template <typename T, typename... ArgsT>
+		static var make_protect(ArgsT &&...args)
+		{
+			var data;
+			data.construct_store<T>(std::forward<ArgsT>(args)...);
+			data.m_flags.var_protect = true;
+			return data;
+		}
+
 		inline bool internal_svo_enabled() const noexcept
 		{
-			return m_ptr != nullptr && get_flag(flags::svo_enabled);
+			return m_flags.initialized && m_flags.svo_enabled;
 		}
 
 		void swap(var &other) noexcept
 		{
-			bool lhs_svo = this->internal_svo_enabled();
-			bool rhs_svo = other.internal_svo_enabled();
-			if (lhs_svo && rhs_svo) {
-				size_t temp_svo_store[COVSCRIPT_SVO_SIZE];
-				std::swap_ranges(m_svo_store, m_svo_store + COVSCRIPT_SVO_SIZE, other.m_svo_store);
-				std::swap(m_flags, other.m_flags);
-			}
-			else if (!lhs_svo && !rhs_svo) {
-				std::swap(m_flags, other.m_flags);
-				std::swap(m_ptr, other.m_ptr);
-			}
-			else {
-				if (lhs_svo) {
-					std::memcpy(other.m_svo_store, m_svo_store, sizeof(m_svo_store));
-					std::swap(m_flags, other.m_flags);
-					m_ptr = other.m_ptr;
-					other.m_ptr = reinterpret_cast<base_store *>(other.m_svo_store);
-				}
-				else {
-					std::memcpy(m_svo_store, other.m_svo_store, sizeof(m_svo_store));
-					std::swap(m_flags, other.m_flags);
-					other.m_ptr = m_ptr;
-					m_ptr = reinterpret_cast<base_store *>(m_svo_store);
-				}
-			}
+			std::swap(m_store, other.m_store);
+			std::swap(m_flags, other.m_flags);
 		}
 
 		inline bool usable() const noexcept
 		{
-			return m_ptr != nullptr;
+			return m_flags.initialized;
 		}
 
-		// alias to usable
 		inline bool is_null() const noexcept
 		{
-			return usable();
+			return !m_flags.initialized;
 		}
 
 		var() noexcept = default;
@@ -625,12 +626,12 @@ namespace cs {
 
 		const std::type_info &type() const
 		{
-			return usable() ? m_ptr->type() : typeid(null_t);
+			return usable() ? get_ptr()->type() : typeid(null_t);
 		}
 
 		integer_t to_integer() const
 		{
-			return usable() ? m_ptr->to_integer() : 0;
+			return usable() ? get_ptr()->to_integer() : 0;
 		}
 
 		var to_integer_var() const
@@ -640,18 +641,104 @@ namespace cs {
 
 		byte_string_borrower to_string() const
 		{
-			return usable() ? m_ptr->to_string() : "null";
+			return usable() ? get_ptr()->to_string() : "null";
 		}
 
 		std::size_t hash() const
 		{
-			return usable() ? m_ptr->hash() : 0;
+			return usable() ? get_ptr()->hash() : 0;
 		}
 
-		void detach() const
+		void detach()
 		{
 			if (usable())
-				m_ptr->detach();
+				get_ptr()->detach();
+		}
+
+		byte_string_t get_type_name() const
+		{
+			if (is_null())
+				return cs_impl::get_name_of_type<null_t>();
+			else
+				return get_ptr()->get_type_name();
+		}
+
+		bool is_protect() const
+		{
+			return m_flags.var_protect;
+		}
+
+		void protect(bool value = true)
+		{
+			m_flags.var_protect = value;
+		}
+
+		var &operator=(const var &obj)
+		{
+			if (&obj != this)
+				copy_store(obj);
+			return *this;
+		}
+
+		var &operator=(var &&obj) noexcept
+		{
+			if (&obj != this)
+				swap(obj);
+			return *this;
+		}
+
+		bool compare(const var &obj) const
+		{
+			if (is_null())
+				return obj.is_null();
+			else
+				return obj.is_null() ? false : get_ptr()->compare(obj.get_ptr());
+		}
+
+		bool operator==(const var &obj) const
+		{
+			return compare(obj);
+		}
+
+		bool operator!=(const var &obj) const
+		{
+			return !compare(obj);
+		}
+
+		template <typename T>
+		T &val() const
+		{
+			if (is_null())
+				throw runtime_error("Instance null variable.");
+			base_store *ptr = get_ptr();
+			if (typeid(T) != ptr->type())
+				throw runtime_error("Instance variable with wrong type. Provided " +
+				                    cs_impl::cxx_demangle(typeid(T).name()) + ", expected " + ptr->get_type_name());
+			return static_cast<store<T> *>(ptr)->data();
+		}
+
+		template <typename T>
+		const T &const_val() const
+		{
+			if (is_null())
+				throw runtime_error("Instance null variable.");
+			const base_store *ptr = get_ptr();
+			if (typeid(T) != ptr->type())
+				throw runtime_error("Instance variable with wrong type. Provided " +
+				                    cs_impl::cxx_demangle(typeid(T).name()) + ", expected " + ptr->get_type_name());
+			return static_cast<const store<T> *>(ptr)->data();
+		}
+
+		template <typename T>
+		explicit operator T &()
+		{
+			return this->val<T>();
+		}
+
+		template <typename T>
+		explicit operator const T &() const
+		{
+			return this->const_val<T>();
 		}
 	};
 }
