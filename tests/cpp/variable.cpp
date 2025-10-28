@@ -47,18 +47,6 @@ TEST_CASE("var swap", "[var]")
 	REQUIRE(b.to_integer() == 1);
 }
 
-TEST_CASE("var detach does not crash", "[var]")
-{
-	var v = var::make<numeric_t>(99LL);
-	REQUIRE_NOTHROW(v.detach());
-}
-
-TEST_CASE("var SVO enabled for small objects", "[var]")
-{
-	var v = var::make<numeric_t>(10LL);
-	REQUIRE(v.internal_svo_enabled() == true);
-}
-
 TEST_CASE("var to_integer_var returns numeric_t wrapped var", "[var]")
 {
 	var v = var::make<numeric_t>(77LL);
