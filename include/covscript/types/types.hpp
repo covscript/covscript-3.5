@@ -21,7 +21,11 @@
 namespace cs
 {
 	using string = byte_string_t;
+	using string_view = byte_string_view;
+	using string_borrower = byte_string_borrower;
 	using utf_string = unicode_string_t;
+	using utf_string_view = unicode_string_view;
+	using utf_string_borrower = unicode_string_borrower;
 	using list = std::list<var>;
 	using fwd_list = std::forward_list<var>;
 	using array = std::deque<var>;
