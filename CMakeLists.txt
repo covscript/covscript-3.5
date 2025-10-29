@@ -20,7 +20,7 @@ if (MSVC)
     set(CMAKE_RC_FLAGS "/nologo /c65001")
 
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(covscript PUBLIC -O2 -DNDEBUG -fPIC)
+    target_compile_options(covscript PUBLIC -O2 -DNDEBUG -fPIC -Wno-interference-size)
     if (WIN32)
         target_compile_options(covscript PUBLIC --static)
     elseif (UNIX AND NOT APPLE)
