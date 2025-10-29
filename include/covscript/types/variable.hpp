@@ -1,8 +1,10 @@
+#pragma once
 #include <covscript/common/platform.hpp>
 #include <covscript/types/basic.hpp>
 #include <covscript/types/numeric.hpp>
 #include <covscript/types/string.hpp>
 #include <covscript/types/exception.hpp>
+#include <covscript/types/support.hpp>
 #include <type_traits>
 #include <typeindex>
 #include <cstring>
@@ -10,279 +12,6 @@
 #include <bitset>
 #include <new>
 
-namespace cs_impl {
-	// Name Demangle
-	cs::byte_string_t cxx_demangle(const char *);
-
-	template <typename T>
-	inline cs::byte_string_view get_name_of_type()
-	{
-		static cs::byte_string_t name = cxx_demangle(typeid(T).name());
-		return name;
-	}
-
-	// Type support auto-detection(SFINAE)
-	template <typename...>
-	using void_t = void;
-
-	// Compare
-	template <typename _Tp>
-	class compare_helper {
-		template <typename T, typename X = bool>
-		struct matcher;
-
-		template <typename T>
-		static constexpr bool match(T *)
-		{
-			return false;
-		}
-
-		template <typename T>
-		static constexpr bool match(matcher<T, decltype(std::declval<T>() == std::declval<T>())> *)
-		{
-			return true;
-		}
-
-	public:
-		static constexpr bool value = match<_Tp>(nullptr);
-	};
-
-	template <typename, bool>
-	struct compare_if;
-
-	template <typename T>
-	struct compare_if<T, true> {
-		static bool compare(const T &a, const T &b)
-		{
-			return a == b;
-		}
-	};
-
-	template <typename T>
-	struct compare_if<T, false> {
-		static bool compare(const T &a, const T &b)
-		{
-			return &a == &b;
-		}
-	};
-
-	// To String
-	template <typename _Tp>
-	class to_string_helper {
-		template <typename T, typename X>
-		struct matcher;
-
-		template <typename T>
-		static constexpr bool match(T *)
-		{
-			return false;
-		}
-
-		template <typename T>
-		static constexpr bool match(matcher<T, decltype(std::to_string(std::declval<T>()))> *)
-		{
-			return true;
-		}
-
-	public:
-		static constexpr bool value = match<_Tp>(nullptr);
-	};
-
-	template <typename, bool>
-	struct to_string_if;
-
-	template <typename T>
-	struct to_string_if<T, true> {
-		static cs::byte_string_borrower to_string(const T &val)
-		{
-			return std::to_string(val);
-		}
-	};
-
-	// To Integer
-	template <typename, bool>
-	struct to_integer_if;
-
-	template <typename T>
-	struct to_integer_if<T, true> {
-		static cs::integer_t to_integer(const T &val)
-		{
-			return static_cast<cs::integer_t>(val);
-		}
-	};
-
-	template <typename T>
-	struct to_integer_if<T, false> {
-		static cs::integer_t to_integer(const T &)
-		{
-			throw cs::lang_error(cs::byte_string_t("Target type ") +
-			                     get_name_of_type<T>().data() + " cannot convert to integer.");
-		}
-	};
-
-	// Hash
-	template <typename T, typename = void>
-	struct hash_helper {
-		static constexpr bool value = false;
-	};
-
-	template <typename T>
-	struct hash_helper<T, void_t<decltype(std::hash<T> {}(std::declval<T>()))>> {
-		static constexpr bool value = true;
-	};
-
-	template <typename T>
-	struct hash_gen_base {
-		static std::size_t base_code;
-	};
-
-	template <typename T>
-	std::size_t hash_gen_base<T>::base_code = typeid(T).hash_code();
-
-	template <typename, typename, bool>
-	struct hash_if;
-
-	template <typename T, typename X>
-	struct hash_if<T, X, true> {
-		static std::size_t hash(const X &val)
-		{
-			static std::hash<T> gen;
-			return gen(static_cast<const T>(val)) + hash_gen_base<X>::base_code;
-		}
-	};
-
-	template <typename T>
-	struct hash_if<T, T, true> {
-		static std::size_t hash(const T &val)
-		{
-			static std::hash<T> gen;
-			return gen(val);
-		}
-	};
-
-	template <typename T, typename X>
-	struct hash_if<T, X, false> {
-		static std::size_t hash(const X &val)
-		{
-			throw cs::lang_error(cs::byte_string_t("Target type ") +
-			                     get_name_of_type<T>().data() + " unhashable.");
-		}
-	};
-
-	template <typename, bool>
-	struct hash_enum_resolver;
-
-	template <typename T>
-	struct hash_enum_resolver<T, true> {
-		using type = hash_if<std::size_t, T, true>;
-	};
-
-	template <typename T>
-	struct hash_enum_resolver<T, false> {
-		using type = hash_if<T, T, hash_helper<T>::value>;
-	};
-
-	/*
-	 * Type support
-	 * You can specialize template functions to support type-related functions.
-	 * But if you do not have specialization, CovScript can also automatically detect related functions.
-	 */
-	template <typename T>
-	static bool compare(const T &a, const T &b)
-	{
-		return compare_if<T, compare_helper<T>::value>::compare(a, b);
-	}
-
-	template <typename T>
-	static cs::byte_string_borrower to_string(const T &val)
-	{
-		return to_string_if<T, to_string_helper<T>::value>::to_string(val);
-	}
-
-	template <typename T>
-	static cs::integer_t to_integer(const T &val)
-	{
-		return to_integer_if<T, std::is_convertible<T, cs::integer_t>::value>::to_integer(val);
-	}
-
-	template <typename T>
-	static std::size_t hash(const T &val)
-	{
-		using type = typename hash_enum_resolver<T, std::is_enum<T>::value>::type;
-		return type::hash(val);
-	}
-
-	template <typename T>
-	static void detach(T &val)
-	{
-		// Do something if you want when data is copying.
-	}
-
-	template <typename T>
-	struct to_string_if<T, false> {
-		static cs::byte_string_borrower to_string(const T &)
-		{
-			return "[" + cs::byte_string_t(get_name_of_type<T>()) + "]";
-		}
-	};
-
-	// template<typename T>
-	// static cs::namespace_t &get_ext()
-	// {
-	// 	throw cs::runtime_error(std::string("Target type \"") + cs_impl::cxx_demangle(cs_impl::get_name_of_type<T>()) +
-	// 	                        "\" doesn't have extension field.");
-	// }
-
-	template <typename _Target>
-	struct type_conversion_cs {
-		using source_type = _Target;
-		using _not_specialized = void;
-	};
-
-	template <typename _Source>
-	struct type_conversion_cpp {
-		using target_type = _Source;
-		using _not_specialized = void;
-	};
-
-	template <typename _From, typename _To>
-	struct type_convertor {
-		using _not_specialized = void;
-		template <typename T>
-		static inline _To convert(T &&val) noexcept
-		{
-			return std::move(static_cast<_To>(std::forward<T>(val)));
-		}
-	};
-
-	template <typename T>
-	struct type_convertor<T, T> {
-		template <typename X>
-		static inline X &&convert(X &&val) noexcept
-		{
-			return std::forward<X>(val);
-		}
-	};
-
-	template <typename T>
-	struct type_convertor<T, void> {
-		template <typename X>
-		static inline void convert(X &&) noexcept {}
-	};
-
-	template <typename T>
-	struct var_storage {
-		using type = T;
-	};
-
-	template <typename T>
-	using var_storage_t = typename var_storage<std::decay_t<T>>::type;
-}
-
-/*
- * Small Variable Optimization
- * Aligned to 64 bytes cache line
- */
 #ifndef COVSCRIPT_SVO_ALIGN
 #define COVSCRIPT_SVO_ALIGN (std::hardware_destructive_interference_size)
 #endif
@@ -290,25 +19,29 @@ namespace cs_impl {
 namespace cs {
 	struct null_t {};
 
+	template <std::size_t align_size, template <typename> class allocator_t>
+	class basic_var_borrower;
+
 	template <std::size_t align_size,
-	          template <typename> class allocator_type_t = default_allocator>
-	class basic_var final {
+	          template <typename> class allocator_t = default_allocator>
+	class basic_var final
+	{
 		template <typename T>
-		static allocator_type_t<T> &get_allocator()
+		static allocator_t<T> &get_allocator()
 		{
-			static allocator_type_t<T> allocator;
+			static allocator_t<T> allocator;
 			return allocator;
 		}
 
 		static_assert(align_size % 8 == 0, "align_size must be a multiple of 8.");
-		static_assert(align_size >= alignof(std::max_align_t),
+		static_assert(align_size >= std::max(alignof(std::max_align_t), 2 * sizeof(void *)),
 		              "align_size must greater than alignof(std::max_align_t).");
 
-		using aligned_storage_t = std::aligned_storage_t<align_size - alignof(std::max_align_t), alignof(std::max_align_t)>;
+		using aligned_storage_t = std::aligned_storage_t<align_size - (std::max)(alignof(std::max_align_t), 2 * sizeof(void *)), alignof(std::max_align_t)>;
 
-		enum class var_op {
-			access,
-			compare,
+		enum class var_op
+		{
+			get,
 			copy,
 			move,
 			destroy,
@@ -316,11 +49,11 @@ namespace cs {
 			type_name,
 			to_integer,
 			to_string,
-			hash,
-			detach,
+			hash
 		};
 
-		union var_op_result {
+		union var_op_result
+		{
 			const std::type_info *_typeid;
 			integer_t _int;
 			std::size_t _hash;
@@ -329,7 +62,8 @@ namespace cs {
 		};
 
 		template <typename T>
-		struct var_op_svo_dispatcher {
+		struct var_op_svo_dispatcher
+		{
 			template <typename... ArgsT>
 			static void construct(basic_var *val, ArgsT &&...args)
 			{
@@ -340,11 +74,8 @@ namespace cs {
 				const T *ptr = reinterpret_cast<const T *>(&lhs->m_store.buffer);
 				var_op_result result;
 				switch (op) {
-				case var_op::access:
+				case var_op::get:
 					result._ptr = const_cast<T *>(ptr);
-					break;
-				case var_op::compare:
-					result._int = cs_impl::compare(*ptr, *static_cast<const T *>(rhs));
 					break;
 				case var_op::copy:
 					::new (&static_cast<basic_var *>(rhs)->m_store.buffer) T(*ptr);
@@ -370,16 +101,14 @@ namespace cs {
 				case var_op::hash:
 					result._hash = cs_impl::hash<T>(*ptr);
 					break;
-				case var_op::detach:
-					cs_impl::detach(*const_cast<T *>(ptr));
-					break;
 				}
 				return result;
 			}
 		};
 
 		template <typename T>
-		struct var_op_heap_dispatcher {
+		struct var_op_heap_dispatcher
+		{
 			template <typename... ArgsT>
 			static void construct(basic_var *val, ArgsT &&...args)
 			{
@@ -392,11 +121,8 @@ namespace cs {
 				const T *ptr = static_cast<const T *>(lhs->m_store.ptr);
 				var_op_result result;
 				switch (op) {
-				case var_op::access:
+				case var_op::get:
 					result._ptr = const_cast<T *>(ptr);
-					break;
-				case var_op::compare:
-					result._int = cs_impl::compare(*ptr, *static_cast<const T *>(rhs));
 					break;
 				case var_op::copy: {
 					T *nptr = get_allocator<T>().allocate(1);
@@ -429,9 +155,6 @@ namespace cs {
 				case var_op::hash:
 					result._hash = cs_impl::hash<T>(*ptr);
 					break;
-				case var_op::detach:
-					cs_impl::detach(*const_cast<T *>(ptr));
-					break;
 				}
 				return result;
 			}
@@ -443,19 +166,41 @@ namespace cs {
 		using dispatcher_class = std::conditional_t<(sizeof(T) > sizeof(aligned_storage_t)),
 		      var_op_heap_dispatcher<T>, var_op_svo_dispatcher<T>>;
 
+		using operators_type = cs_impl::operators::type;
+
+		template <typename T>
+		static basic_var_borrower<align_size, allocator_t> call_operator(operators_type, bool, const basic_var *, void *);
+
+		using operator_t = basic_var_borrower<align_size, allocator_t> (*)(operators_type, bool, const basic_var *, void *);
+
 		dispatcher_t m_dispatcher = nullptr;
-		union store_impl {
+		operator_t m_operator = nullptr;
+		union store_impl
+		{
 			aligned_storage_t buffer;
 			void *ptr;
 
 			store_impl() : ptr(nullptr) {}
 		} m_store;
 
+		template <typename T>
+		inline T &unchecked_get() noexcept
+		{
+			return *static_cast<T *>(m_dispatcher(var_op::get, this, nullptr)._ptr);
+		}
+
+		template <typename T>
+		inline const T &unchecked_get() const noexcept
+		{
+			return *static_cast<const T *>(m_dispatcher(var_op::get, this, nullptr)._ptr);
+		}
+
 		template <typename T, typename... ArgsT>
 		inline void construct_store(ArgsT &&...args)
 		{
 			destroy_store();
 			m_dispatcher = &dispatcher_class<T>::dispatcher;
+			m_operator = &call_operator<T>;
 			dispatcher_class<T>::construct(this, std::forward<ArgsT>(args)...);
 		}
 
@@ -473,6 +218,7 @@ namespace cs {
 			if (other.m_dispatcher != nullptr) {
 				other.m_dispatcher(var_op::copy, &other, this);
 				m_dispatcher = other.m_dispatcher;
+				m_operator = other.m_operator;
 			}
 		}
 
@@ -482,6 +228,7 @@ namespace cs {
 			if (other.m_dispatcher != nullptr) {
 				other.m_dispatcher(var_op::move, &other, this);
 				m_dispatcher = other.m_dispatcher;
+				m_operator = other.m_operator;
 				other.m_dispatcher = nullptr;
 			}
 		}
@@ -503,6 +250,7 @@ namespace cs {
 		void swap(basic_var &other) noexcept
 		{
 			std::swap(m_dispatcher, other.m_dispatcher);
+			std::swap(m_operator, other.m_operator);
 			std::swap(m_store, other.m_store);
 		}
 
@@ -587,12 +335,6 @@ namespace cs {
 				return 0;
 		}
 
-		void detach()
-		{
-			if (usable())
-				m_dispatcher(var_op::detach, this, nullptr);
-		}
-
 		byte_string_borrower type_name() const
 		{
 			if (usable())
@@ -618,6 +360,7 @@ namespace cs {
 			{
 				destroy_store();
 				m_dispatcher = obj.m_dispatcher;
+				m_operator = obj.m_operator;
 				m_store = obj.m_store;
 				obj.m_dispatcher = nullptr;
 			}
@@ -627,8 +370,10 @@ namespace cs {
 		bool compare(const basic_var &obj) const
 		{
 			if (usable() && m_dispatcher == obj.m_dispatcher)
-				return m_dispatcher(var_op::compare, this,
-				                    m_dispatcher(var_op::access, &obj, nullptr)._ptr)._int;
+				return m_operator(operators_type::compare,
+				                  true, this, (void *)&obj)
+				.data()
+				->template unchecked_get<bool_t>();
 			else
 				return obj.is_null();
 		}
@@ -647,7 +392,7 @@ namespace cs {
 		inline store_t &val()
 		{
 			if (m_dispatcher == &dispatcher_class<store_t>::dispatcher)
-				return *static_cast<store_t *>(m_dispatcher(var_op::access, this, nullptr)._ptr);
+				return *static_cast<store_t *>(m_dispatcher(var_op::get, this, nullptr)._ptr);
 			else if (m_dispatcher == nullptr)
 				throw runtime_error("Instance null variable.");
 			else
@@ -659,7 +404,7 @@ namespace cs {
 		inline const store_t &const_val() const
 		{
 			if (m_dispatcher == &dispatcher_class<store_t>::dispatcher)
-				return *static_cast<const store_t *>(m_dispatcher(var_op::access, this, nullptr)._ptr);
+				return *static_cast<const store_t *>(m_dispatcher(var_op::get, this, nullptr)._ptr);
 			else if (m_dispatcher == nullptr)
 				throw runtime_error("Instance null variable.");
 			else
@@ -680,65 +425,154 @@ namespace cs {
 		}
 	};
 
-	using var = basic_var<COVSCRIPT_SVO_ALIGN>;
-}
-
-namespace cs_impl {
-	template <>
-	cs::integer_t to_integer<cs::numeric_t>(const cs::numeric_t &val)
+	template <std::size_t align_size,
+	          template <typename> class allocator_t = default_allocator>
+	class basic_var_borrower final
 	{
-		return val.as_integer();
-	}
+		using var = basic_var<align_size, allocator_t>;
+		using allocator_type = allocator_t<var>;
 
-	template <>
-	cs::byte_string_borrower to_string<cs::numeric_t>(const cs::numeric_t &val)
-	{
-		return val.to_string();
-	}
-
-	template <>
-	cs::byte_string_borrower to_string<cs::byte_string_t>(const cs::byte_string_t &str)
-	{
-		return cs::byte_string_view(str);
-	}
-
-	template <>
-	cs::byte_string_borrower to_string<cs::unicode_string_t>(const cs::unicode_string_t &str)
-	{
-		return cs::unicode::unicode_to_byte(str);
-	}
-
-	template <>
-	cs::byte_string_borrower to_string<bool>(const bool &v)
-	{
-		if (v)
-			return "true";
-		else
-			return "false";
-	}
-
-	template <int N>
-	struct var_storage<char[N]>
-	{
-		using type = std::string;
-	};
-
-	template <>
-	struct var_storage<std::type_info>
-	{
-		using type = std::type_index;
-	};
-}
-
-// std::ostream &operator<<(std::ostream &, const cs::var &);
-
-namespace std {
-	template <>
-	struct hash<cs::var>
-	{
-		std::size_t operator()(const cs::var &val) const
+		static allocator_type &get_allocator()
 		{
-			return val.hash();
+			static allocator_type allocator;
+			return allocator;
+		}
+
+		const var *m_data = nullptr;
+		bool m_const = false;
+		bool m_own = false;
+
+		void destroy()
+		{
+			if (m_own && m_data) {
+				m_data->~basic_var();
+				get_allocator().deallocate(const_cast<var *>(m_data), 1);
+			}
+			m_data = nullptr;
+			m_const = false;
+			m_own = false;
+		}
+
+	public:
+		basic_var_borrower() noexcept = default;
+
+		basic_var_borrower(var &val) noexcept : m_data(&val), m_const(false), m_own(false) {}
+
+		basic_var_borrower(const var &val) noexcept : m_data(&val), m_const(true), m_own(false) {}
+
+		basic_var_borrower(var &&val) : m_own(true), m_const(false)
+		{
+			var *p = get_allocator().allocate(1);
+			::new (p) var(std::move(val));
+			m_data = p;
+		}
+
+		basic_var_borrower(const basic_var_borrower &other) : m_own(other.m_own), m_const(other.m_const)
+		{
+			if (other.m_own) {
+				var *p = get_allocator().allocate(1);
+				::new (p) var(*other.m_data);
+				m_data = p;
+			}
+			else
+				m_data = other.m_data;
+		}
+
+		basic_var_borrower(basic_var_borrower &&other) noexcept
+			: m_data(other.m_data), m_const(other.m_const), m_own(other.m_own)
+		{
+			other.m_data = nullptr;
+			other.m_const = false;
+			other.m_own = false;
+		}
+
+		template <typename T, typename store_t = cs_impl::var_storage_t<T>,
+		          typename = std::enable_if_t<!std::is_same_v<store_t, var> && !std::is_same_v<store_t, basic_var_borrower>>>
+		basic_var_borrower(T &&val) : m_own(true), m_const(false)
+		{
+			var *p = get_allocator().allocate(1);
+			::new (p) var(std::forward<T>(val));
+			m_data = p;
+		}
+
+		~basic_var_borrower()
+		{
+			destroy();
+		}
+
+		basic_var_borrower &operator=(const basic_var_borrower &other)
+		{
+			if (this != &other) {
+				destroy();
+				m_own = other.m_own;
+				m_const = other.m_const;
+				if (other.m_own) {
+					var *p = get_allocator().allocate(1);
+					::new (p) var(*other.m_data);
+					m_data = p;
+				}
+				else
+					m_data = other.m_data;
+			}
+			return *this;
+		}
+
+		basic_var_borrower &operator=(basic_var_borrower &&other) noexcept
+		{
+			if (this != &other)
+			{
+				destroy();
+				m_data = other.m_data;
+				m_const = other.m_const;
+				m_own = other.m_own;
+				other.m_data = nullptr;
+				other.m_const = false;
+				other.m_own = false;
+			}
+			return *this;
+		}
+
+		var *data() const noexcept
+		{
+			if (m_const)
+				return nullptr;
+			else
+				return const_cast<var *>(m_data);
+		}
+
+		const var *const_data() const noexcept
+		{
+			return m_data;
+		}
+
+		bool usable() const noexcept
+		{
+			return m_data != nullptr && m_data->usable();
+		}
+
+		operator bool() const noexcept
+		{
+			return usable();
+		}
+
+		bool is_null() const noexcept
+		{
+			return m_data == nullptr || m_data->is_null();
+		}
+
+		template <typename T, typename store_t = cs_impl::var_storage_t<T>>
+		const store_t &const_val()
+		{
+			if (m_data != nullptr)
+				return m_data->template val<T>();
+			else
+				throw runtime_error("Instance null variable.");
 		}
 	};
+
+	using var = basic_var<COVSCRIPT_SVO_ALIGN, default_allocator>;
+	using var_borrower = basic_var_borrower<COVSCRIPT_SVO_ALIGN, default_allocator>;
+	using fwd_array = std::vector<var>;
 }
+
+#include "covscript/types/xtra_var.cpp"

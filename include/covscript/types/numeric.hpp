@@ -1,13 +1,11 @@
 #pragma once
+#include <covscript/types/basic.hpp>
 #include <type_traits>
 #include <cstdint>
 #include <cstdlib>
 #include <string>
 
 namespace cs {
-	using float_t = long double;
-	using integer_t = long long int;
-
 	class numeric_t final {
 		union {
 			float_t _num;
@@ -379,12 +377,6 @@ namespace cs {
 				return data._num;
 		}
 
-		std::string to_string() const
-		{
-			if (type)
-				return std::to_string(data._int);
-			else
-				return std::to_string(data._num);
-		}
+		byte_string_t to_string() const;
 	};
 }

@@ -101,10 +101,10 @@ TEST_CASE("basic_string_borrower move assignment", "[basic_string_borrower]")
 	REQUIRE(a.access() == nullptr);
 }
 
-TEST_CASE("basic_string_borrower view conversion operator", "[basic_string_borrower]")
+TEST_CASE("basic_string_borrower view conversion", "[basic_string_borrower]")
 {
 	byte_string_borrower b(byte_string_t("convert"));
-	byte_string_view v = b;
+	byte_string_view v = b.view();
 	REQUIRE(v == "convert");
 }
 

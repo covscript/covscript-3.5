@@ -124,7 +124,7 @@ TEST_CASE("basic_var: wrong type and null exceptions from val/const_val", "[basi
 	REQUIRE_THROWS_AS(nullv.const_val<Small>(), runtime_error);
 }
 
-TEST_CASE("basic_var: swap and detach/hash", "[basic_var][misc]")
+TEST_CASE("basic_var: swap and hash", "[basic_var][misc]")
 {
 	auto a = cs::var::make<Small>(1);
 	auto b = cs::var::make<Small>(2);
@@ -134,8 +134,4 @@ TEST_CASE("basic_var: swap and detach/hash", "[basic_var][misc]")
 	a.swap(b);
 	REQUIRE(a.const_val<Small>().v == 2);
 	REQUIRE(b.const_val<Small>().v == 1);
-
-	// detach is no-op in our mock, just ensure it doesn't throw
-	a.detach();
-	b.detach();
 }

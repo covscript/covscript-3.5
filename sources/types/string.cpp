@@ -1,4 +1,5 @@
 #include <covscript/types/string.hpp>
+#include <covscript/types/numeric.hpp>
 #include <covscript/types/exception.hpp>
 #include <utfcpp/utf8.h>
 
@@ -35,5 +36,15 @@ namespace cs::unicode {
 		byte_string_t str;
 		utf8::unchecked::utf32to8(ustr.begin(), ustr.end(), std::back_inserter(str));
 		return str;
+	}
+}
+
+namespace cs {
+	byte_string_t numeric_t::to_string() const
+	{
+		if (type)
+			return cs::to_string(data._int);
+		else
+			return cs::to_string(data._num);
 	}
 }

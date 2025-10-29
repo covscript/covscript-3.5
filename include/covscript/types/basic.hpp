@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdlib>
+#include <string>
 #include <vector>
 
 #ifndef COVSCRIPT_STACK_PRESERVE
@@ -12,7 +13,14 @@
 
 namespace cs {
 	using bool_t = bool;
-	using size_t = std::size_t;
+	using char_t = char;
+	using uchar_t = char32_t;
+	using float_t = long double;
+	using integer_t = long long int;
+	using byte_string_t = std::basic_string<char>;
+	using byte_string_view = std::basic_string_view<char>;
+	using unicode_string_t = std::basic_string<char32_t>;
+	using unicode_string_view = std::basic_string_view<char32_t>;
 
 	template<typename T>
 	class stack final {
@@ -134,9 +142,9 @@ namespace cs {
 
 	template <typename T,
 	          std::size_t block_size = COVSCRIPT_BLOCK_ALLOCATOR_SIZE,
-	          template <typename> class allocator_type_t = std::allocator>
+	          template <typename> class allocator_t = std::allocator>
 	class allocator_type {
-		allocator_type_t<T> m_alloc;
+		allocator_t<T> m_alloc;
 		T *m_pool[block_size];
 		std::size_t m_offset;
 

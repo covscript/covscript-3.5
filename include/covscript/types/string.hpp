@@ -4,19 +4,14 @@
 #include <string>
 
 namespace cs {
-	using char_t = char;
-	using uchar_t = char32_t;
-	using byte_string_t = std::basic_string<char>;
-	using byte_string_view = std::basic_string_view<char>;
-	using unicode_string_t = std::basic_string<char32_t>;
-	using unicode_string_view = std::basic_string_view<char32_t>;
+	using std::to_string;
 
 	template <typename CharT,
-	          template <typename> class allocator_type_t = default_allocator>
+	          template <typename> class allocator_t = default_allocator>
 	class basic_string_borrower final {
 		using stl_string = std::basic_string<CharT>;
 		using stl_string_view = std::basic_string_view<CharT>;
-		using allocator_type = allocator_type_t<stl_string>;
+		using allocator_type = allocator_t<stl_string>;
 
 		static allocator_type &get_allocator()
 		{
@@ -39,7 +34,7 @@ namespace cs {
 		}
 
 	public:
-		basic_string_borrower() noexcept : m_data(nullptr), m_own(false) {}
+		basic_string_borrower() noexcept = default;
 
 		basic_string_borrower(const CharT *str) noexcept : m_data(const_cast<CharT *>(str)), m_own(false) {}
 
@@ -123,9 +118,14 @@ namespace cs {
 				return nullptr;
 		}
 
-		operator stl_string_view() const noexcept
+		bool usable() const noexcept
 		{
-			return view();
+			return m_data != nullptr;
+		}
+
+		operator bool() const noexcept
+		{
+			return usable();
 		}
 
 		stl_string *access() noexcept

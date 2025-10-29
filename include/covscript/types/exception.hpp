@@ -1,31 +1,28 @@
 #pragma once
-
-// TODO: Refactoring based on the new cs::string
-
+#include <covscript/types/string.hpp>
 #include <exception>
-#include <string>
 
 namespace cs {
 	struct csym_info;
 
 	class exception final : public std::exception {
 		std::size_t mLine = 0;
-		std::string mFile, mCode, mWhat, mStr;
+		byte_string_borrower mFile, mCode, mWhat, mStr;
 
-		static std::string compose_what(const std::string &file, std::size_t line, const std::string &code, const std::string &what)
+		static byte_string_t compose_what(const byte_string_borrower &file, std::size_t line, const byte_string_borrower &code, const byte_string_borrower &what)
 		{
-			return "File \"" + file + "\", line " + std::to_string(line) + ": " + what + "\n>\t" + code + "\n";
+			return byte_string_t("File \"") + file.data() + "\", line " + std::to_string(line) + ": " + what.data() + "\n>\t" + code.data() + "\n";
 		}
 
-		static std::string compose_what_internal(const std::string &file, const std::string &what)
+		static byte_string_t compose_what_internal(const byte_string_borrower &file, const byte_string_borrower &what)
 		{
-			return "File \"" + file + "\", line <INTERNAL>: " + what + "\n";
+			return byte_string_t("File \"") + file.data() + "\", line <INTERNAL>: " + what.data() + "\n";
 		}
 
 	public:
 		exception() = delete;
 
-		exception(std::size_t line, std::string file, std::string code, std::string what) noexcept:
+		exception(std::size_t line, byte_string_borrower file, byte_string_borrower code, byte_string_borrower what) noexcept:
 			mLine(line), mFile(std::move(file)), mCode(std::move(code)), mWhat(std::move(what))
 		{
 			mStr = compose_what(mFile, mLine, mCode, mWhat);
@@ -41,7 +38,7 @@ namespace cs {
 
 		exception &operator=(exception &&) = default;
 
-		const std::string &file() const noexcept
+		const byte_string_borrower &file() const noexcept
 		{
 			return mFile;
 		}
@@ -50,17 +47,17 @@ namespace cs {
 
 		const char *what() const noexcept override
 		{
-			return this->mStr.c_str();
+			return this->mStr.data();
 		}
 	};
 
 	class compile_error final : public std::exception {
-		std::string mWhat = "Compile Error";
+		byte_string_borrower mWhat = "Compile Error";
 	public:
 		compile_error() = default;
 
-		explicit compile_error(const std::string &str) noexcept:
-			mWhat("Compile Error: " + str) {}
+		explicit compile_error(const byte_string_borrower &str) noexcept:
+			mWhat(byte_string_t("Compile Error: ") + str.data()) {}
 
 		compile_error(const compile_error &) = default;
 
@@ -74,17 +71,17 @@ namespace cs {
 
 		const char *what() const noexcept override
 		{
-			return this->mWhat.c_str();
+			return this->mWhat.data();
 		}
 	};
 
 	class runtime_error final : public std::exception {
-		std::string mWhat = "Runtime Error";
+		byte_string_borrower mWhat = "Runtime Error";
 	public:
 		runtime_error() = default;
 
-		explicit runtime_error(const std::string &str) noexcept:
-			mWhat("Runtime Error: " + str) {}
+		explicit runtime_error(const byte_string_borrower &str) noexcept:
+			mWhat(byte_string_t("Runtime Error: ") + str.data()) {}
 
 		runtime_error(const runtime_error &) = default;
 
@@ -98,17 +95,17 @@ namespace cs {
 
 		const char *what() const noexcept override
 		{
-			return this->mWhat.c_str();
+			return this->mWhat.data();
 		}
 	};
 
 	class internal_error final : public std::exception {
-		std::string mWhat = "Internal Error";
+		byte_string_borrower mWhat = "Internal Error";
 	public:
 		internal_error() = default;
 
-		explicit internal_error(const std::string &str) noexcept:
-			mWhat("Internal Error: " + str) {}
+		explicit internal_error(const byte_string_borrower &str) noexcept:
+			mWhat(byte_string_t("Internal Error: ") + str.data()) {}
 
 		internal_error(const internal_error &) = default;
 
@@ -122,16 +119,16 @@ namespace cs {
 
 		const char *what() const noexcept override
 		{
-			return this->mWhat.c_str();
+			return this->mWhat.data();
 		}
 	};
 
 	class lang_error final {
-		std::string mWhat;
+		byte_string_borrower mWhat;
 	public:
 		lang_error() = default;
 
-		explicit lang_error(std::string str) noexcept:
+		explicit lang_error(byte_string_borrower str) noexcept:
 			mWhat(std::move(str)) {}
 
 		lang_error(const lang_error &) = default;
@@ -146,17 +143,17 @@ namespace cs {
 
 		const char *what() const noexcept
 		{
-			return this->mWhat.c_str();
+			return this->mWhat.data();
 		}
 	};
 
 	class fatal_error final : public std::exception {
-		std::string mWhat = "Fatal Error";
+		byte_string_borrower mWhat = "Fatal Error";
 	public:
 		fatal_error() = default;
 
-		explicit fatal_error(const std::string &str) noexcept:
-			mWhat("Fatal Error: " + str) {}
+		explicit fatal_error(const byte_string_borrower &str) noexcept:
+			mWhat(byte_string_t("Fatal Error: ") + str.data()) {}
 
 		fatal_error(const fatal_error &) = default;
 
@@ -170,7 +167,7 @@ namespace cs {
 
 		const char *what() const noexcept override
 		{
-			return this->mWhat.c_str();
+			return this->mWhat.data();
 		}
 	};
 }
