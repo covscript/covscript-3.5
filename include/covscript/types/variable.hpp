@@ -4,6 +4,7 @@
 #include <covscript/types/string.hpp>
 #include <covscript/types/exception.hpp>
 #include <type_traits>
+#include <typeindex>
 #include <cstring>
 #include <cstdint>
 #include <bitset>
@@ -268,30 +269,14 @@ namespace cs_impl {
 		template <typename X>
 		static inline void convert(X &&) noexcept {}
 	};
-}
 
-template <>
-cs::integer_t cs_impl::to_integer<cs::numeric_t>(const cs::numeric_t &val)
-{
-	return val.as_integer();
-}
+	template <typename T>
+	struct var_storage {
+		using type = T;
+	};
 
-template <>
-cs::byte_string_borrower cs_impl::to_string<cs::numeric_t>(const cs::numeric_t &val)
-{
-	return val.to_string();
-}
-
-template <>
-cs::byte_string_borrower cs_impl::to_string<cs::byte_string_t>(const cs::byte_string_t &str)
-{
-	return cs::byte_string_view(str);
-}
-
-template <>
-cs::byte_string_borrower cs_impl::to_string<cs::unicode_string_t>(const cs::unicode_string_t &str)
-{
-	return cs::unicode::unicode_to_byte(str);
+	template <typename T>
+	using var_storage_t = typename var_storage<std::decay_t<T>>::type;
 }
 
 /*
@@ -303,8 +288,7 @@ cs::byte_string_borrower cs_impl::to_string<cs::unicode_string_t>(const cs::unic
 #endif
 
 namespace cs {
-	struct null_t {
-	};
+	struct null_t {};
 
 	template <std::size_t align_size,
 	          template <typename> class allocator_type_t = default_allocator>
@@ -471,8 +455,8 @@ namespace cs {
 		inline void construct_store(ArgsT &&...args)
 		{
 			destroy_store();
-			m_dispatcher = &dispatcher_class<std::decay_t<T>>::dispatcher;
-			dispatcher_class<std::decay_t<T>>::construct(this, std::forward<ArgsT>(args)...);
+			m_dispatcher = &dispatcher_class<T>::dispatcher;
+			dispatcher_class<T>::construct(this, std::forward<ArgsT>(args)...);
 		}
 
 		inline void destroy_store()
@@ -534,11 +518,11 @@ namespace cs {
 
 		basic_var() noexcept = default;
 
-		template <typename T,
-		          typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, basic_var>>>
+		template <typename T, typename store_t = cs_impl::var_storage_t<T>,
+		          typename = std::enable_if_t<!std::is_same_v<store_t, basic_var>>>
 		basic_var(T &&val)
 		{
-			construct_store<T>(std::forward<T>(val));
+			construct_store<store_t>(std::forward<T>(val));
 		}
 
 		basic_var(const basic_var &v)
@@ -564,10 +548,10 @@ namespace cs {
 				return typeid(null_t);
 		}
 
-		template <typename T>
+		template <typename T, typename store_t = cs_impl::var_storage_t<T>>
 		bool is_type_of() const
 		{
-			return usable() ? m_dispatcher == &dispatcher_class<std::decay_t<T>>::dispatcher : std::is_same_v<T, null_t>;
+			return usable() ? m_dispatcher == &dispatcher_class<store_t>::dispatcher : std::is_same_v<store_t, null_t>;
 		}
 
 		integer_t to_integer() const
@@ -585,7 +569,8 @@ namespace cs {
 
 		byte_string_borrower to_string() const
 		{
-			if (usable()) {
+			if (usable())
+			{
 				byte_string_borrower borrower;
 				m_dispatcher(var_op::to_string, this, &borrower);
 				return borrower;
@@ -610,7 +595,8 @@ namespace cs {
 
 		byte_string_borrower type_name() const
 		{
-			if (usable()) {
+			if (usable())
+			{
 				byte_string_borrower borrower;
 				m_dispatcher(var_op::type_name, this, &borrower);
 				return borrower;
@@ -628,7 +614,8 @@ namespace cs {
 
 		basic_var &operator=(basic_var &&obj) noexcept
 		{
-			if (&obj != this) {
+			if (&obj != this)
+			{
 				destroy_store();
 				m_dispatcher = obj.m_dispatcher;
 				m_store = obj.m_store;
@@ -656,11 +643,11 @@ namespace cs {
 			return !compare(obj);
 		}
 
-		template <typename T, typename decayed_t = std::decay_t<T>>
-		inline decayed_t &val()
+		template <typename T, typename store_t = cs_impl::var_storage_t<T>>
+		inline store_t &val()
 		{
-			if (m_dispatcher == &dispatcher_class<decayed_t>::dispatcher)
-				return *static_cast<decayed_t *>(m_dispatcher(var_op::access, this, nullptr)._ptr);
+			if (m_dispatcher == &dispatcher_class<store_t>::dispatcher)
+				return *static_cast<store_t *>(m_dispatcher(var_op::access, this, nullptr)._ptr);
 			else if (m_dispatcher == nullptr)
 				throw runtime_error("Instance null variable.");
 			else
@@ -668,10 +655,11 @@ namespace cs {
 				                    cs_impl::cxx_demangle(typeid(T).name()) + ", expected " + type_name().data());
 		}
 
-		template <typename T, typename decayed_t = std::decay_t<T>>
-		inline const decayed_t &const_val() const {
-			if (m_dispatcher == &dispatcher_class<decayed_t>::dispatcher)
-				return *static_cast<const decayed_t *>(m_dispatcher(var_op::access, this, nullptr)._ptr);
+		template <typename T, typename store_t = cs_impl::var_storage_t<T>>
+		inline const store_t &const_val() const
+		{
+			if (m_dispatcher == &dispatcher_class<store_t>::dispatcher)
+				return *static_cast<const store_t *>(m_dispatcher(var_op::access, this, nullptr)._ptr);
 			else if (m_dispatcher == nullptr)
 				throw runtime_error("Instance null variable.");
 			else
@@ -693,4 +681,64 @@ namespace cs {
 	};
 
 	using var = basic_var<COVSCRIPT_SVO_ALIGN>;
+}
+
+namespace cs_impl {
+	template <>
+	cs::integer_t to_integer<cs::numeric_t>(const cs::numeric_t &val)
+	{
+		return val.as_integer();
+	}
+
+	template <>
+	cs::byte_string_borrower to_string<cs::numeric_t>(const cs::numeric_t &val)
+	{
+		return val.to_string();
+	}
+
+	template <>
+	cs::byte_string_borrower to_string<cs::byte_string_t>(const cs::byte_string_t &str)
+	{
+		return cs::byte_string_view(str);
+	}
+
+	template <>
+	cs::byte_string_borrower to_string<cs::unicode_string_t>(const cs::unicode_string_t &str)
+	{
+		return cs::unicode::unicode_to_byte(str);
+	}
+
+	template <>
+	cs::byte_string_borrower to_string<bool>(const bool &v)
+	{
+		if (v)
+			return "true";
+		else
+			return "false";
+	}
+
+	template <int N>
+	struct var_storage<char[N]>
+	{
+		using type = std::string;
+	};
+
+	template <>
+	struct var_storage<std::type_info>
+	{
+		using type = std::type_index;
+	};
+}
+
+// std::ostream &operator<<(std::ostream &, const cs::var &);
+
+namespace std {
+	template <>
+	struct hash<cs::var>
+	{
+		std::size_t operator()(const cs::var &val) const
+		{
+			return val.hash();
+		}
+	};
 }
