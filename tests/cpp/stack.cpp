@@ -10,7 +10,8 @@ TEST_CASE("stack basic operations", "[stack]")
 	REQUIRE(s.empty());
 	REQUIRE(s.size() == 0);
 
-	SECTION("push and top") {
+	SECTION("push and top")
+	{
 		s.push(10);
 		REQUIRE(!s.empty());
 		REQUIRE(s.size() == 1);
@@ -21,7 +22,8 @@ TEST_CASE("stack basic operations", "[stack]")
 		REQUIRE(s.top() == 20);
 	}
 
-	SECTION("pop and pop_no_return") {
+	SECTION("pop and pop_no_return")
+	{
 		s.push(1);
 		s.push(2);
 		s.push(3);
@@ -35,7 +37,8 @@ TEST_CASE("stack basic operations", "[stack]")
 		REQUIRE(s.top() == 1);
 	}
 
-	SECTION("bottom and index access") {
+	SECTION("bottom and index access")
+	{
 		s.push(5);
 		s.push(6);
 		s.push(7);
@@ -50,7 +53,8 @@ TEST_CASE("stack basic operations", "[stack]")
 		REQUIRE(s[2] == 5);
 	}
 
-	SECTION("clear") {
+	SECTION("clear")
+	{
 		s.push(42);
 		s.push(43);
 		s.clear();
@@ -62,22 +66,27 @@ TEST_CASE("stack basic operations", "[stack]")
 TEST_CASE("stack iterator", "[stack]")
 {
 	stack<int> s;
-	for (int i = 0; i < 5; ++i) {
+	for (int i = 0; i < 5; ++i)
+	{
 		s.push(i);
 	}
 
-	SECTION("non-const iterator") {
+	SECTION("non-const iterator")
+	{
 		int expected = 4;
-		for (auto it = s.begin(); it != s.end(); ++it) {
+		for (auto it = s.begin(); it != s.end(); ++it)
+		{
 			REQUIRE(*it == expected);
 			--expected;
 		}
 	}
 
-	SECTION("const iterator") {
-		const stack<int>& cs = s;
+	SECTION("const iterator")
+	{
+		const stack<int> &cs = s;
 		int expected = 4;
-		for (auto it = cs.begin(); it != cs.end(); ++it) {
+		for (auto it = cs.begin(); it != cs.end(); ++it)
+		{
 			REQUIRE(*it == expected);
 			--expected;
 		}

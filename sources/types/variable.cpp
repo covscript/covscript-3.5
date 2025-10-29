@@ -24,8 +24,9 @@
 #include <windows.h>
 #include <Dbghelp.h>
 #pragma comment(lib, "DbgHelp")
-namespace cs_impl {
-	cs::byte_string_t cxx_demangle(const char* name)
+namespace cs_impl
+{
+	cs::byte_string_t cxx_demangle(const char *name)
 	{
 		char buffer[1024];
 		DWORD length = UnDecorateSymbolName(name, buffer, sizeof(buffer), 0);
@@ -34,12 +35,13 @@ namespace cs_impl {
 		else
 			return name;
 	}
-}
+} // namespace cs_impl
 #elif defined(__GNUC__) || defined(__clang__)
 
 #include <cxxabi.h>
 
-namespace cs_impl {
+namespace cs_impl
+{
 	cs::byte_string_t cxx_demangle(const char *name)
 	{
 		char buffer[1024] = {0};
@@ -51,5 +53,5 @@ namespace cs_impl {
 		else
 			return name;
 	}
-}
+} // namespace cs_impl
 #endif

@@ -3,7 +3,8 @@
 #include <covscript/types/exception.hpp>
 #include <utfcpp/utf8.h>
 
-namespace cs::unicode {
+namespace cs::unicode
+{
 	bool is_valid(byte_string_view str) noexcept
 	{
 		return utf8::is_valid(str);
@@ -11,22 +12,26 @@ namespace cs::unicode {
 
 	uchar_t next(byte_string_t::const_iterator &it)
 	{
-		try {
+		try
+		{
 			return utf8::unchecked::next(it);
 		}
-		catch (const utf8::exception& utfcpp_ex) {
+		catch (const utf8::exception &utfcpp_ex)
+		{
 			throw lang_error(utfcpp_ex.what());
 		}
 	}
 
 	unicode_string_t byte_to_unicode(byte_string_view str)
 	{
-		try {
+		try
+		{
 			unicode_string_t ustr;
 			utf8::utf8to32(str.begin(), str.end(), std::back_inserter(ustr));
 			return ustr;
 		}
-		catch (const utf8::exception& utfcpp_ex) {
+		catch (const utf8::exception &utfcpp_ex)
+		{
 			throw lang_error(utfcpp_ex.what());
 		}
 	}
@@ -37,9 +42,10 @@ namespace cs::unicode {
 		utf8::unchecked::utf32to8(ustr.begin(), ustr.end(), std::back_inserter(str));
 		return str;
 	}
-}
+} // namespace cs::unicode
 
-namespace cs {
+namespace cs
+{
 	byte_string_t numeric_t::to_string() const
 	{
 		if (type)
@@ -47,4 +53,4 @@ namespace cs {
 		else
 			return cs::to_string(data._num);
 	}
-}
+} // namespace cs

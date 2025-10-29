@@ -2,7 +2,8 @@
 #pragma once
 #include <covscript/types/variable.hpp>
 
-namespace cs_impl {
+namespace cs_impl
+{
 	template <>
 	cs::integer_t to_integer<cs::numeric_t>(const cs::numeric_t &val)
 	{
@@ -47,11 +48,12 @@ namespace cs_impl {
 	{
 		using type = std::type_index;
 	};
-}
+} // namespace cs_impl
 
 // std::ostream &operator<<(std::ostream &, const cs::var &);
 
-namespace std {
+namespace std
+{
 	template <>
 	struct hash<cs::var>
 	{
@@ -60,9 +62,10 @@ namespace std {
 			return val.hash();
 		}
 	};
-}
+} // namespace std
 
-namespace cs_impl::operators {
+namespace cs_impl::operators
+{
 	template <typename var, typename T>
 	static var add(const T &lhs, const var &rhs)
 	{
@@ -200,7 +203,7 @@ namespace cs_impl::operators {
 	{
 		throw cs::lang_error(cs::byte_string_t("Type ") + get_name_of_type<T>().data() + " does not support func(...) operator.");
 	}
-}
+} // namespace cs_impl::operators
 
 template <std::size_t align_size, template <typename> class allocator_t>
 template <typename T>
@@ -208,59 +211,62 @@ cs::basic_var_borrower<align_size, allocator_t> cs::basic_var<align_size, alloca
     cs_impl::operators::type op, bool is_const, const cs::basic_var<align_size, allocator_t> *lhs, void *rhs)
 {
 	using borrower_t = basic_var_borrower<align_size, allocator_t>;
-	switch (op) {
-	case operators_type::add:
-		return cs_impl::operators::add<basic_var>(lhs->template unchecked_get<T>(), static_cast<const basic_var *>(rhs)->const_val<T>());
-	case operators_type::sub:
-		return cs_impl::operators::sub<basic_var>(lhs->template unchecked_get<T>(), static_cast<const basic_var *>(rhs)->const_val<T>());
-	case operators_type::mul:
-		return cs_impl::operators::mul<basic_var>(lhs->template unchecked_get<T>(), static_cast<const basic_var *>(rhs)->const_val<T>());
-	case operators_type::div:
-		return cs_impl::operators::div<basic_var>(lhs->template unchecked_get<T>(), static_cast<const basic_var *>(rhs)->const_val<T>());
-	case operators_type::mod:
-		return cs_impl::operators::mod<basic_var>(lhs->template unchecked_get<T>(), static_cast<const basic_var *>(rhs)->const_val<T>());
-	case operators_type::pow:
-		return cs_impl::operators::pow<basic_var>(lhs->template unchecked_get<T>(), static_cast<const basic_var *>(rhs)->const_val<T>());
-	case operators_type::minus:
-		return cs_impl::operators::minus<basic_var>(lhs->template unchecked_get<T>());
-	case operators_type::escape:
-		return cs_impl::operators::escape<borrower_t>((is_const ? lhs : const_cast<basic_var *>(lhs))->template unchecked_get<T>());
-	case operators_type::selfinc:
-		if (!is_const) {
-			cs_impl::operators::selfinc(const_cast<basic_var *>(lhs)->template unchecked_get<T>());
-			break;
-		}
-		else
-			throw lang_error("Operator ++ requires non-const access to variable.");
-	case operators_type::selfdec:
-		if (!is_const) {
-			cs_impl::operators::selfdec(const_cast<basic_var *>(lhs)->template unchecked_get<T>());
-			break;
-		}
-		else
-			throw lang_error("Operator -- requires non-const access to variable.");
-	// Special operators, type check finished outside.
-	case operators_type::compare:
-		return cs_impl::operators::compare(lhs->template unchecked_get<T>(), static_cast<const basic_var *>(rhs)->template unchecked_get<T>());
-	case operators_type::abocmp:
-		return cs_impl::operators::abocmp(lhs->template unchecked_get<T>(), static_cast<const basic_var *>(rhs)->template unchecked_get<T>());
-	case operators_type::undcmp:
-		return cs_impl::operators::undcmp(lhs->template unchecked_get<T>(), static_cast<const basic_var *>(rhs)->template unchecked_get<T>());
-	case operators_type::aepcmp:
-		return cs_impl::operators::aepcmp(lhs->template unchecked_get<T>(), static_cast<const basic_var *>(rhs)->template unchecked_get<T>());
-	case operators_type::ueqcmp:
-		return cs_impl::operators::ueqcmp(lhs->template unchecked_get<T>(), static_cast<const basic_var *>(rhs)->template unchecked_get<T>());
-	case operators_type::index:
-		return cs_impl::operators::index<borrower_t, basic_var>((is_const ? lhs : const_cast<basic_var *>(lhs))->template unchecked_get<T>(),
-		        *static_cast<const basic_var *>(rhs));
-	case operators_type::access:
-		return cs_impl::operators::access<borrower_t>((is_const ? lhs : const_cast<basic_var *>(lhs))->template unchecked_get<T>(),
-		        static_cast<const basic_var *>(rhs)->const_val<byte_string_t>());
-	case operators_type::arrow:
-		return cs_impl::operators::arrow<borrower_t>((is_const ? lhs : const_cast<basic_var *>(lhs))->template unchecked_get<T>(),
-		        static_cast<const basic_var *>(rhs)->const_val<byte_string_t>());
-	case operators_type::call:
-		return cs_impl::operators::call<borrower_t>((lhs)->template unchecked_get<T>(), *static_cast<fwd_array *>(rhs));
+	switch (op)
+	{
+		case operators_type::add:
+			return cs_impl::operators::add<basic_var>(lhs->template unchecked_get<T>(), static_cast<const basic_var *>(rhs)->const_val<T>());
+		case operators_type::sub:
+			return cs_impl::operators::sub<basic_var>(lhs->template unchecked_get<T>(), static_cast<const basic_var *>(rhs)->const_val<T>());
+		case operators_type::mul:
+			return cs_impl::operators::mul<basic_var>(lhs->template unchecked_get<T>(), static_cast<const basic_var *>(rhs)->const_val<T>());
+		case operators_type::div:
+			return cs_impl::operators::div<basic_var>(lhs->template unchecked_get<T>(), static_cast<const basic_var *>(rhs)->const_val<T>());
+		case operators_type::mod:
+			return cs_impl::operators::mod<basic_var>(lhs->template unchecked_get<T>(), static_cast<const basic_var *>(rhs)->const_val<T>());
+		case operators_type::pow:
+			return cs_impl::operators::pow<basic_var>(lhs->template unchecked_get<T>(), static_cast<const basic_var *>(rhs)->const_val<T>());
+		case operators_type::minus:
+			return cs_impl::operators::minus<basic_var>(lhs->template unchecked_get<T>());
+		case operators_type::escape:
+			return cs_impl::operators::escape<borrower_t>((is_const ? lhs : const_cast<basic_var *>(lhs))->template unchecked_get<T>());
+		case operators_type::selfinc:
+			if (!is_const)
+			{
+				cs_impl::operators::selfinc(const_cast<basic_var *>(lhs)->template unchecked_get<T>());
+				break;
+			}
+			else
+				throw lang_error("Operator ++ requires non-const access to variable.");
+		case operators_type::selfdec:
+			if (!is_const)
+			{
+				cs_impl::operators::selfdec(const_cast<basic_var *>(lhs)->template unchecked_get<T>());
+				break;
+			}
+			else
+				throw lang_error("Operator -- requires non-const access to variable.");
+		// Special operators, type check finished outside.
+		case operators_type::compare:
+			return cs_impl::operators::compare(lhs->template unchecked_get<T>(), static_cast<const basic_var *>(rhs)->template unchecked_get<T>());
+		case operators_type::abocmp:
+			return cs_impl::operators::abocmp(lhs->template unchecked_get<T>(), static_cast<const basic_var *>(rhs)->template unchecked_get<T>());
+		case operators_type::undcmp:
+			return cs_impl::operators::undcmp(lhs->template unchecked_get<T>(), static_cast<const basic_var *>(rhs)->template unchecked_get<T>());
+		case operators_type::aepcmp:
+			return cs_impl::operators::aepcmp(lhs->template unchecked_get<T>(), static_cast<const basic_var *>(rhs)->template unchecked_get<T>());
+		case operators_type::ueqcmp:
+			return cs_impl::operators::ueqcmp(lhs->template unchecked_get<T>(), static_cast<const basic_var *>(rhs)->template unchecked_get<T>());
+		case operators_type::index:
+			return cs_impl::operators::index<borrower_t, basic_var>((is_const ? lhs : const_cast<basic_var *>(lhs))->template unchecked_get<T>(),
+			                                                        *static_cast<const basic_var *>(rhs));
+		case operators_type::access:
+			return cs_impl::operators::access<borrower_t>((is_const ? lhs : const_cast<basic_var *>(lhs))->template unchecked_get<T>(),
+			                                              static_cast<const basic_var *>(rhs)->const_val<byte_string_t>());
+		case operators_type::arrow:
+			return cs_impl::operators::arrow<borrower_t>((is_const ? lhs : const_cast<basic_var *>(lhs))->template unchecked_get<T>(),
+			                                             static_cast<const basic_var *>(rhs)->const_val<byte_string_t>());
+		case operators_type::call:
+			return cs_impl::operators::call<borrower_t>((lhs)->template unchecked_get<T>(), *static_cast<fwd_array *>(rhs));
 	}
 	return basic_var_borrower<align_size, allocator_t>();
 }

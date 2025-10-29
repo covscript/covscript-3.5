@@ -15,12 +15,12 @@ using Large = std::array<std::uint8_t, 32>;
 constexpr size_t N = 10'000'000;
 
 #define TIME_BLOCK(name, code)                                                                    \
-    do                                                                                            \
-    {                                                                                             \
-        auto start = high_resolution_clock::now();                                                \
-        code auto end = high_resolution_clock::now();                                             \
-        std::cout << name << ": " << duration_cast<milliseconds>(end - start).count() << " ms\n"; \
-    } while (0)
+	do                                                                                            \
+	{                                                                                             \
+		auto start = high_resolution_clock::now();                                                \
+		code auto end = high_resolution_clock::now();                                             \
+		std::cout << name << ": " << duration_cast<milliseconds>(end - start).count() << " ms\n"; \
+	} while (0)
 
 int main()
 {
@@ -83,7 +83,8 @@ int main()
 		any_vec.reserve(N);
 		var32_vec.reserve(N);
 		var64_vec.reserve(N);
-		for (size_t i = 0; i < N; ++i) {
+		for (size_t i = 0; i < N; ++i)
+		{
 			any_vec.emplace_back(Small{i});
 			var32_vec.emplace_back(Small{i});
 			var64_vec.emplace_back(Small{i});
@@ -118,7 +119,8 @@ int main()
 		any_vec.reserve(N);
 		var32_vec.reserve(N);
 		var64_vec.reserve(N);
-		for (size_t i = 0; i < N; ++i) {
+		for (size_t i = 0; i < N; ++i)
+		{
 			any_vec.emplace_back(Small{i});
 			var32_vec.emplace_back(Small{i});
 			var64_vec.emplace_back(Small{i});
@@ -144,7 +146,8 @@ int main()
 		any_vec.reserve(N);
 		var32_vec.reserve(N);
 		var64_vec.reserve(N);
-		for (size_t i = 0; i < N; ++i) {
+		for (size_t i = 0; i < N; ++i)
+		{
 			any_vec.emplace_back(Large{});
 			var32_vec.emplace_back(Large{});
 			var64_vec.emplace_back(Large{});

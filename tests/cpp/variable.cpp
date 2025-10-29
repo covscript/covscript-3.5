@@ -3,7 +3,8 @@
 
 using namespace cs;
 
-struct Small {
+struct Small
+{
 	int v;
 	Small() : v(0) {}
 	explicit Small(int x) : v(x) {}
@@ -25,7 +26,8 @@ std::size_t cs_impl::hash<Small>(const Small &val)
 	return cs_impl::hash<int>(val.v);
 }
 
-struct Large {
+struct Large
+{
 	// make it large enough to go to heap path
 	char data[1024];
 	Large()
@@ -62,7 +64,8 @@ TEST_CASE("basic_var: SVO small type construction and access", "[basic_var][svo]
 	REQUIRE(v.const_val<Small>().v == 42);
 	REQUIRE(v.val<Small>().v == 42);
 
-	SECTION("copy and equality") {
+	SECTION("copy and equality")
+	{
 		auto v2 = cs::var::make<Small>(42);
 		REQUIRE(v == v2);
 		auto v3 = v; // copy ctor
@@ -72,14 +75,16 @@ TEST_CASE("basic_var: SVO small type construction and access", "[basic_var][svo]
 		REQUIRE(v4 == v);
 	}
 
-	SECTION("move semantics") {
+	SECTION("move semantics")
+	{
 		cs::var tmp = cs::var::make<Small>(13);
 		cs::var moved = std::move(tmp);
 		REQUIRE(moved.is_type_of<Small>());
 		REQUIRE(!tmp.usable()); // moved-from should be null
 	}
 
-	SECTION("type name and to_string") {
+	SECTION("type name and to_string")
+	{
 		REQUIRE(v.type_name().view() == cs_impl::get_name_of_type<Small>());
 		// our mock to_string returns integer string for integral; Small isn't integral so type name returned
 		REQUIRE(v.to_string().view() == std::to_string(v.const_val<Small>().v));

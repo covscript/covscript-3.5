@@ -5,9 +5,12 @@
 #include <cstdlib>
 #include <string>
 
-namespace cs {
-	class numeric_t final {
-		union {
+namespace cs
+{
+	class numeric_t final
+	{
+		union
+		{
 			float_t _num;
 			integer_t _int;
 		} data;
@@ -18,7 +21,7 @@ namespace cs {
 			return lhs << 1 | rhs;
 		}
 
-	public:
+	   public:
 		numeric_t()
 		{
 			data._int = 0;
@@ -44,16 +47,17 @@ namespace cs {
 
 		numeric_t operator+(const numeric_t &rhs) const noexcept
 		{
-			switch (get_composite_type(type, rhs.type)) {
-			default:
-			case 0b00:
-				return data._num + rhs.data._num;
-			case 0b01:
-				return data._num + rhs.data._int;
-			case 0b10:
-				return data._int + rhs.data._num;
-			case 0b11:
-				return data._int + rhs.data._int;
+			switch (get_composite_type(type, rhs.type))
+			{
+				default:
+				case 0b00:
+					return data._num + rhs.data._num;
+				case 0b01:
+					return data._num + rhs.data._int;
+				case 0b10:
+					return data._int + rhs.data._num;
+				case 0b11:
+					return data._int + rhs.data._int;
 			}
 		}
 
@@ -68,16 +72,17 @@ namespace cs {
 
 		numeric_t operator-(const numeric_t &rhs) const noexcept
 		{
-			switch (get_composite_type(type, rhs.type)) {
-			default:
-			case 0b00:
-				return data._num - rhs.data._num;
-			case 0b01:
-				return data._num - rhs.data._int;
-			case 0b10:
-				return data._int - rhs.data._num;
-			case 0b11:
-				return data._int - rhs.data._int;
+			switch (get_composite_type(type, rhs.type))
+			{
+				default:
+				case 0b00:
+					return data._num - rhs.data._num;
+				case 0b01:
+					return data._num - rhs.data._int;
+				case 0b10:
+					return data._int - rhs.data._num;
+				case 0b11:
+					return data._int - rhs.data._int;
 			}
 		}
 
@@ -92,16 +97,17 @@ namespace cs {
 
 		numeric_t operator*(const numeric_t &rhs) const noexcept
 		{
-			switch (get_composite_type(type, rhs.type)) {
-			default:
-			case 0b00:
-				return data._num * rhs.data._num;
-			case 0b01:
-				return data._num * rhs.data._int;
-			case 0b10:
-				return data._int * rhs.data._num;
-			case 0b11:
-				return data._int * rhs.data._int;
+			switch (get_composite_type(type, rhs.type))
+			{
+				default:
+				case 0b00:
+					return data._num * rhs.data._num;
+				case 0b01:
+					return data._num * rhs.data._int;
+				case 0b10:
+					return data._int * rhs.data._num;
+				case 0b11:
+					return data._int * rhs.data._int;
 			}
 		}
 
@@ -116,20 +122,21 @@ namespace cs {
 
 		numeric_t operator/(const numeric_t &rhs) const noexcept
 		{
-			switch (get_composite_type(type, rhs.type)) {
-			default:
-			case 0b00:
-				return data._num / rhs.data._num;
-			case 0b01:
-				return data._num / rhs.data._int;
-			case 0b10:
-				return data._int / rhs.data._num;
-			case 0b11:
-				std::lldiv_t divres = std::lldiv(data._int, rhs.data._int);
-				if (divres.rem == 0)
-					return divres.quot;
-				else
-					return static_cast<float_t>(data._int) / rhs.data._int;
+			switch (get_composite_type(type, rhs.type))
+			{
+				default:
+				case 0b00:
+					return data._num / rhs.data._num;
+				case 0b01:
+					return data._num / rhs.data._int;
+				case 0b10:
+					return data._int / rhs.data._num;
+				case 0b11:
+					std::lldiv_t divres = std::lldiv(data._int, rhs.data._int);
+					if (divres.rem == 0)
+						return divres.quot;
+					else
+						return static_cast<float_t>(data._int) / rhs.data._int;
 			}
 		}
 
@@ -144,7 +151,8 @@ namespace cs {
 
 		numeric_t &operator=(const numeric_t &num)
 		{
-			if (this != &num) {
+			if (this != &num)
+			{
 				data = num.data;
 				type = num.type;
 			}
@@ -167,16 +175,17 @@ namespace cs {
 
 		bool operator<(const numeric_t &rhs) const noexcept
 		{
-			switch (get_composite_type(type, rhs.type)) {
-			default:
-			case 0b00:
-				return data._num < rhs.data._num;
-			case 0b01:
-				return data._num < rhs.data._int;
-			case 0b10:
-				return data._int < rhs.data._num;
-			case 0b11:
-				return data._int < rhs.data._int;
+			switch (get_composite_type(type, rhs.type))
+			{
+				default:
+				case 0b00:
+					return data._num < rhs.data._num;
+				case 0b01:
+					return data._num < rhs.data._int;
+				case 0b10:
+					return data._int < rhs.data._num;
+				case 0b11:
+					return data._int < rhs.data._int;
 			}
 		}
 
@@ -191,16 +200,17 @@ namespace cs {
 
 		bool operator<=(const numeric_t &rhs) const noexcept
 		{
-			switch (get_composite_type(type, rhs.type)) {
-			default:
-			case 0b00:
-				return data._num <= rhs.data._num;
-			case 0b01:
-				return data._num <= rhs.data._int;
-			case 0b10:
-				return data._int <= rhs.data._num;
-			case 0b11:
-				return data._int <= rhs.data._int;
+			switch (get_composite_type(type, rhs.type))
+			{
+				default:
+				case 0b00:
+					return data._num <= rhs.data._num;
+				case 0b01:
+					return data._num <= rhs.data._int;
+				case 0b10:
+					return data._int <= rhs.data._num;
+				case 0b11:
+					return data._int <= rhs.data._int;
 			}
 		}
 
@@ -215,16 +225,17 @@ namespace cs {
 
 		bool operator>(const numeric_t &rhs) const noexcept
 		{
-			switch (get_composite_type(type, rhs.type)) {
-			default:
-			case 0b00:
-				return data._num > rhs.data._num;
-			case 0b01:
-				return data._num > rhs.data._int;
-			case 0b10:
-				return data._int > rhs.data._num;
-			case 0b11:
-				return data._int > rhs.data._int;
+			switch (get_composite_type(type, rhs.type))
+			{
+				default:
+				case 0b00:
+					return data._num > rhs.data._num;
+				case 0b01:
+					return data._num > rhs.data._int;
+				case 0b10:
+					return data._int > rhs.data._num;
+				case 0b11:
+					return data._int > rhs.data._int;
 			}
 		}
 
@@ -239,16 +250,17 @@ namespace cs {
 
 		bool operator>=(const numeric_t &rhs) const noexcept
 		{
-			switch (get_composite_type(type, rhs.type)) {
-			default:
-			case 0b00:
-				return data._num >= rhs.data._num;
-			case 0b01:
-				return data._num >= rhs.data._int;
-			case 0b10:
-				return data._int >= rhs.data._num;
-			case 0b11:
-				return data._int >= rhs.data._int;
+			switch (get_composite_type(type, rhs.type))
+			{
+				default:
+				case 0b00:
+					return data._num >= rhs.data._num;
+				case 0b01:
+					return data._num >= rhs.data._int;
+				case 0b10:
+					return data._int >= rhs.data._num;
+				case 0b11:
+					return data._int >= rhs.data._int;
 			}
 		}
 
@@ -263,16 +275,17 @@ namespace cs {
 
 		bool operator==(const numeric_t &rhs) const noexcept
 		{
-			switch (get_composite_type(type, rhs.type)) {
-			default:
-			case 0b00:
-				return data._num == rhs.data._num;
-			case 0b01:
-				return data._num == rhs.data._int;
-			case 0b10:
-				return data._int == rhs.data._num;
-			case 0b11:
-				return data._int == rhs.data._int;
+			switch (get_composite_type(type, rhs.type))
+			{
+				default:
+				case 0b00:
+					return data._num == rhs.data._num;
+				case 0b01:
+					return data._num == rhs.data._int;
+				case 0b10:
+					return data._int == rhs.data._num;
+				case 0b11:
+					return data._int == rhs.data._int;
 			}
 		}
 
@@ -287,16 +300,17 @@ namespace cs {
 
 		bool operator!=(const numeric_t &rhs) const noexcept
 		{
-			switch (get_composite_type(type, rhs.type)) {
-			default:
-			case 0b00:
-				return data._num != rhs.data._num;
-			case 0b01:
-				return data._num != rhs.data._int;
-			case 0b10:
-				return data._int != rhs.data._num;
-			case 0b11:
-				return data._int != rhs.data._int;
+			switch (get_composite_type(type, rhs.type))
+			{
+				default:
+				case 0b00:
+					return data._num != rhs.data._num;
+				case 0b01:
+					return data._num != rhs.data._int;
+				case 0b10:
+					return data._int != rhs.data._num;
+				case 0b11:
+					return data._int != rhs.data._int;
 			}
 		}
 
@@ -379,4 +393,4 @@ namespace cs {
 
 		byte_string_t to_string() const;
 	};
-}
+} // namespace cs

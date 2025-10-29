@@ -16,8 +16,11 @@
 #define COVSCRIPT_SVO_ALIGN (std::hardware_destructive_interference_size)
 #endif
 
-namespace cs {
-	struct null_t {};
+namespace cs
+{
+	struct null_t
+	{
+	};
 
 	template <std::size_t align_size, template <typename> class allocator_t>
 	class basic_var_borrower;
@@ -37,7 +40,7 @@ namespace cs {
 		static_assert(align_size >= std::max(alignof(std::max_align_t), 2 * sizeof(void *)),
 		              "align_size must greater than alignof(std::max_align_t).");
 
-		using aligned_storage_t = std::aligned_storage_t<align_size - (std::max)(alignof(std::max_align_t), 2 * sizeof(void *)), alignof(std::max_align_t)>;
+		using aligned_storage_t = std::aligned_storage_t<align_size - (std::max) (alignof(std::max_align_t), 2 * sizeof(void *)), alignof(std::max_align_t)>;
 
 		enum class var_op
 		{
@@ -73,34 +76,35 @@ namespace cs {
 			{
 				const T *ptr = reinterpret_cast<const T *>(&lhs->m_store.buffer);
 				var_op_result result;
-				switch (op) {
-				case var_op::get:
-					result._ptr = const_cast<T *>(ptr);
-					break;
-				case var_op::copy:
-					::new (&static_cast<basic_var *>(rhs)->m_store.buffer) T(*ptr);
-					break;
-				case var_op::move:
-					::new (&static_cast<basic_var *>(rhs)->m_store.buffer) T(std::move(*ptr));
-					break;
-				case var_op::destroy:
-					ptr->~T();
-					break;
-				case var_op::rtti_type:
-					result._typeid = &typeid(T);
-					break;
-				case var_op::type_name:
-					*static_cast<byte_string_borrower *>(rhs) = cs_impl::get_name_of_type<T>();
-					break;
-				case var_op::to_integer:
-					result._int = cs_impl::to_integer(*ptr);
-					break;
-				case var_op::to_string:
-					*static_cast<byte_string_borrower *>(rhs) = cs_impl::to_string(*ptr);
-					break;
-				case var_op::hash:
-					result._hash = cs_impl::hash<T>(*ptr);
-					break;
+				switch (op)
+				{
+					case var_op::get:
+						result._ptr = const_cast<T *>(ptr);
+						break;
+					case var_op::copy:
+						::new (&static_cast<basic_var *>(rhs)->m_store.buffer) T(*ptr);
+						break;
+					case var_op::move:
+						::new (&static_cast<basic_var *>(rhs)->m_store.buffer) T(std::move(*ptr));
+						break;
+					case var_op::destroy:
+						ptr->~T();
+						break;
+					case var_op::rtti_type:
+						result._typeid = &typeid(T);
+						break;
+					case var_op::type_name:
+						*static_cast<byte_string_borrower *>(rhs) = cs_impl::get_name_of_type<T>();
+						break;
+					case var_op::to_integer:
+						result._int = cs_impl::to_integer(*ptr);
+						break;
+					case var_op::to_string:
+						*static_cast<byte_string_borrower *>(rhs) = cs_impl::to_string(*ptr);
+						break;
+					case var_op::hash:
+						result._hash = cs_impl::hash<T>(*ptr);
+						break;
 				}
 				return result;
 			}
@@ -120,41 +124,44 @@ namespace cs {
 			{
 				const T *ptr = static_cast<const T *>(lhs->m_store.ptr);
 				var_op_result result;
-				switch (op) {
-				case var_op::get:
-					result._ptr = const_cast<T *>(ptr);
-					break;
-				case var_op::copy: {
-					T *nptr = get_allocator<T>().allocate(1);
-					::new (nptr) T(*ptr);
-					static_cast<basic_var *>(rhs)->m_store.ptr = nptr;
-					break;
-				}
-				case var_op::move: {
-					T *nptr = get_allocator<T>().allocate(1);
-					::new (nptr) T(std::move(*ptr));
-					static_cast<basic_var *>(rhs)->m_store.ptr = nptr;
-					break;
-				}
-				case var_op::destroy:
-					ptr->~T();
-					get_allocator<T>().deallocate(const_cast<T *>(ptr), 1);
-					break;
-				case var_op::rtti_type:
-					result._typeid = &typeid(T);
-					break;
-				case var_op::type_name:
-					*static_cast<byte_string_borrower *>(rhs) = cs_impl::get_name_of_type<T>();
-					break;
-				case var_op::to_integer:
-					result._int = cs_impl::to_integer(*ptr);
-					break;
-				case var_op::to_string:
-					*static_cast<byte_string_borrower *>(rhs) = cs_impl::to_string(*ptr);
-					break;
-				case var_op::hash:
-					result._hash = cs_impl::hash<T>(*ptr);
-					break;
+				switch (op)
+				{
+					case var_op::get:
+						result._ptr = const_cast<T *>(ptr);
+						break;
+					case var_op::copy:
+					{
+						T *nptr = get_allocator<T>().allocate(1);
+						::new (nptr) T(*ptr);
+						static_cast<basic_var *>(rhs)->m_store.ptr = nptr;
+						break;
+					}
+					case var_op::move:
+					{
+						T *nptr = get_allocator<T>().allocate(1);
+						::new (nptr) T(std::move(*ptr));
+						static_cast<basic_var *>(rhs)->m_store.ptr = nptr;
+						break;
+					}
+					case var_op::destroy:
+						ptr->~T();
+						get_allocator<T>().deallocate(const_cast<T *>(ptr), 1);
+						break;
+					case var_op::rtti_type:
+						result._typeid = &typeid(T);
+						break;
+					case var_op::type_name:
+						*static_cast<byte_string_borrower *>(rhs) = cs_impl::get_name_of_type<T>();
+						break;
+					case var_op::to_integer:
+						result._int = cs_impl::to_integer(*ptr);
+						break;
+					case var_op::to_string:
+						*static_cast<byte_string_borrower *>(rhs) = cs_impl::to_string(*ptr);
+						break;
+					case var_op::hash:
+						result._hash = cs_impl::hash<T>(*ptr);
+						break;
 				}
 				return result;
 			}
@@ -164,7 +171,7 @@ namespace cs {
 
 		template <typename T>
 		using dispatcher_class = std::conditional_t<(sizeof(T) > sizeof(aligned_storage_t)),
-		      var_op_heap_dispatcher<T>, var_op_svo_dispatcher<T>>;
+		                                            var_op_heap_dispatcher<T>, var_op_svo_dispatcher<T>>;
 
 		using operators_type = cs_impl::operators::type;
 
@@ -206,7 +213,8 @@ namespace cs {
 
 		inline void destroy_store()
 		{
-			if (m_dispatcher != nullptr) {
+			if (m_dispatcher != nullptr)
+			{
 				m_dispatcher(var_op::destroy, this, nullptr);
 				m_dispatcher = nullptr;
 			}
@@ -215,7 +223,8 @@ namespace cs {
 		inline void copy_store(const basic_var &other)
 		{
 			destroy_store();
-			if (other.m_dispatcher != nullptr) {
+			if (other.m_dispatcher != nullptr)
+			{
 				other.m_dispatcher(var_op::copy, &other, this);
 				m_dispatcher = other.m_dispatcher;
 				m_operator = other.m_operator;
@@ -225,7 +234,8 @@ namespace cs {
 		inline void move_store(basic_var &&other)
 		{
 			destroy_store();
-			if (other.m_dispatcher != nullptr) {
+			if (other.m_dispatcher != nullptr)
+			{
 				other.m_dispatcher(var_op::move, &other, this);
 				m_dispatcher = other.m_dispatcher;
 				m_operator = other.m_operator;
@@ -233,7 +243,7 @@ namespace cs {
 			}
 		}
 
-	public:
+	   public:
 		static constexpr std::size_t internal_svo_threshold()
 		{
 			return sizeof(store_impl);
@@ -371,9 +381,9 @@ namespace cs {
 		{
 			if (usable() && m_dispatcher == obj.m_dispatcher)
 				return m_operator(operators_type::compare,
-				                  true, this, (void *)&obj)
-				.data()
-				->template unchecked_get<bool_t>();
+				                  true, this, (void *) &obj)
+				    .data()
+				    ->template unchecked_get<bool_t>();
 			else
 				return obj.is_null();
 		}
@@ -444,7 +454,8 @@ namespace cs {
 
 		void destroy()
 		{
-			if (m_own && m_data) {
+			if (m_own && m_data)
+			{
 				m_data->~basic_var();
 				get_allocator().deallocate(const_cast<var *>(m_data), 1);
 			}
@@ -453,7 +464,7 @@ namespace cs {
 			m_own = false;
 		}
 
-	public:
+	   public:
 		basic_var_borrower() noexcept = default;
 
 		basic_var_borrower(var &val) noexcept : m_data(&val), m_const(false), m_own(false) {}
@@ -469,7 +480,8 @@ namespace cs {
 
 		basic_var_borrower(const basic_var_borrower &other) : m_own(other.m_own), m_const(other.m_const)
 		{
-			if (other.m_own) {
+			if (other.m_own)
+			{
 				var *p = get_allocator().allocate(1);
 				::new (p) var(*other.m_data);
 				m_data = p;
@@ -479,7 +491,7 @@ namespace cs {
 		}
 
 		basic_var_borrower(basic_var_borrower &&other) noexcept
-			: m_data(other.m_data), m_const(other.m_const), m_own(other.m_own)
+		    : m_data(other.m_data), m_const(other.m_const), m_own(other.m_own)
 		{
 			other.m_data = nullptr;
 			other.m_const = false;
@@ -502,11 +514,13 @@ namespace cs {
 
 		basic_var_borrower &operator=(const basic_var_borrower &other)
 		{
-			if (this != &other) {
+			if (this != &other)
+			{
 				destroy();
 				m_own = other.m_own;
 				m_const = other.m_const;
-				if (other.m_own) {
+				if (other.m_own)
+				{
 					var *p = get_allocator().allocate(1);
 					::new (p) var(*other.m_data);
 					m_data = p;
@@ -573,6 +587,6 @@ namespace cs {
 	using var = basic_var<COVSCRIPT_SVO_ALIGN, default_allocator>;
 	using var_borrower = basic_var_borrower<COVSCRIPT_SVO_ALIGN, default_allocator>;
 	using fwd_array = std::vector<var>;
-}
+} // namespace cs
 
 #include "covscript/types/xtra_var.cpp"

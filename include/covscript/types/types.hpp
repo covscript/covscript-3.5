@@ -18,7 +18,8 @@
 #include <vector>
 #include <utility>
 
-namespace cs {
+namespace cs
+{
 	using string = byte_string_t;
 	using utf_string = unicode_string_t;
 	using list = std::list<var>;
@@ -40,4 +41,4 @@ namespace cs {
 
 	using hash_set = set_t<var>;
 	using hash_map = map_t<var, var>;
-}
+} // namespace cs

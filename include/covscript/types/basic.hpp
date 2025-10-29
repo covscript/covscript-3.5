@@ -11,7 +11,8 @@
 #define COVSCRIPT_BLOCK_ALLOCATOR_SIZE 64
 #endif
 
-namespace cs {
+namespace cs
+{
 	using bool_t = bool;
 	using char_t = char;
 	using uchar_t = char32_t;
@@ -22,10 +23,12 @@ namespace cs {
 	using unicode_string_t = std::basic_string<char32_t>;
 	using unicode_string_view = std::basic_string_view<char32_t>;
 
-	template<typename T>
-	class stack final {
+	template <typename T>
+	class stack final
+	{
 		std::vector<T> m_impl;
-	public:
+
+	   public:
 		using iterator = typename std::vector<T>::reverse_iterator;
 		using const_iterator = typename std::vector<T>::const_reverse_iterator;
 
@@ -96,7 +99,7 @@ namespace cs {
 			return m_impl[m_impl.size() - offset - 1];
 		}
 
-		template<typename...ArgsT>
+		template <typename... ArgsT>
 		inline void push(ArgsT &&...args)
 		{
 			m_impl.emplace_back(std::forward<ArgsT>(args)...);
@@ -143,12 +146,13 @@ namespace cs {
 	template <typename T,
 	          std::size_t block_size = COVSCRIPT_BLOCK_ALLOCATOR_SIZE,
 	          template <typename> class allocator_t = std::allocator>
-	class allocator_type {
+	class allocator_type
+	{
 		allocator_t<T> m_alloc;
 		T *m_pool[block_size];
 		std::size_t m_offset;
 
-	public:
+	   public:
 		allocator_type() : m_offset(0)
 		{
 			for (std::size_t i = 0; i < block_size / 2; ++i)
@@ -189,4 +193,4 @@ namespace cs {
 	template <typename T>
 	using default_allocator = allocator_type<T>;
 #endif
-}
+} // namespace cs

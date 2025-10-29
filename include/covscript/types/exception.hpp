@@ -2,10 +2,12 @@
 #include <covscript/types/string.hpp>
 #include <exception>
 
-namespace cs {
+namespace cs
+{
 	struct csym_info;
 
-	class exception final : public std::exception {
+	class exception final : public std::exception
+	{
 		std::size_t mLine = 0;
 		byte_string_borrower mFile, mCode, mWhat, mStr;
 
@@ -19,11 +21,10 @@ namespace cs {
 			return byte_string_t("File \"") + file.data() + "\", line <INTERNAL>: " + what.data() + "\n";
 		}
 
-	public:
+	   public:
 		exception() = delete;
 
-		exception(std::size_t line, byte_string_borrower file, byte_string_borrower code, byte_string_borrower what) noexcept:
-			mLine(line), mFile(std::move(file)), mCode(std::move(code)), mWhat(std::move(what))
+		exception(std::size_t line, byte_string_borrower file, byte_string_borrower code, byte_string_borrower what) noexcept : mLine(line), mFile(std::move(file)), mCode(std::move(code)), mWhat(std::move(what))
 		{
 			mStr = compose_what(mFile, mLine, mCode, mWhat);
 		}
@@ -51,13 +52,14 @@ namespace cs {
 		}
 	};
 
-	class compile_error final : public std::exception {
+	class compile_error final : public std::exception
+	{
 		byte_string_borrower mWhat = "Compile Error";
-	public:
+
+	   public:
 		compile_error() = default;
 
-		explicit compile_error(const byte_string_borrower &str) noexcept:
-			mWhat(byte_string_t("Compile Error: ") + str.data()) {}
+		explicit compile_error(const byte_string_borrower &str) noexcept : mWhat(byte_string_t("Compile Error: ") + str.data()) {}
 
 		compile_error(const compile_error &) = default;
 
@@ -75,13 +77,14 @@ namespace cs {
 		}
 	};
 
-	class runtime_error final : public std::exception {
+	class runtime_error final : public std::exception
+	{
 		byte_string_borrower mWhat = "Runtime Error";
-	public:
+
+	   public:
 		runtime_error() = default;
 
-		explicit runtime_error(const byte_string_borrower &str) noexcept:
-			mWhat(byte_string_t("Runtime Error: ") + str.data()) {}
+		explicit runtime_error(const byte_string_borrower &str) noexcept : mWhat(byte_string_t("Runtime Error: ") + str.data()) {}
 
 		runtime_error(const runtime_error &) = default;
 
@@ -99,13 +102,14 @@ namespace cs {
 		}
 	};
 
-	class internal_error final : public std::exception {
+	class internal_error final : public std::exception
+	{
 		byte_string_borrower mWhat = "Internal Error";
-	public:
+
+	   public:
 		internal_error() = default;
 
-		explicit internal_error(const byte_string_borrower &str) noexcept:
-			mWhat(byte_string_t("Internal Error: ") + str.data()) {}
+		explicit internal_error(const byte_string_borrower &str) noexcept : mWhat(byte_string_t("Internal Error: ") + str.data()) {}
 
 		internal_error(const internal_error &) = default;
 
@@ -123,13 +127,14 @@ namespace cs {
 		}
 	};
 
-	class lang_error final {
+	class lang_error final
+	{
 		byte_string_borrower mWhat;
-	public:
+
+	   public:
 		lang_error() = default;
 
-		explicit lang_error(byte_string_borrower str) noexcept:
-			mWhat(std::move(str)) {}
+		explicit lang_error(byte_string_borrower str) noexcept : mWhat(std::move(str)) {}
 
 		lang_error(const lang_error &) = default;
 
@@ -147,13 +152,14 @@ namespace cs {
 		}
 	};
 
-	class fatal_error final : public std::exception {
+	class fatal_error final : public std::exception
+	{
 		byte_string_borrower mWhat = "Fatal Error";
-	public:
+
+	   public:
 		fatal_error() = default;
 
-		explicit fatal_error(const byte_string_borrower &str) noexcept:
-			mWhat(byte_string_t("Fatal Error: ") + str.data()) {}
+		explicit fatal_error(const byte_string_borrower &str) noexcept : mWhat(byte_string_t("Fatal Error: ") + str.data()) {}
 
 		fatal_error(const fatal_error &) = default;
 
@@ -170,4 +176,4 @@ namespace cs {
 			return this->mWhat.data();
 		}
 	};
-}
+} // namespace cs

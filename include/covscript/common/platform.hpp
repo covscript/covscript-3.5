@@ -131,7 +131,8 @@
 #endif
 #endif
 
-namespace cs {
+namespace cs
+{
 	// Path seperator and delimiter
 #ifdef COVSCRIPT_PLATFORM_WIN32
 	constexpr char path_separator = '\\';
@@ -140,4 +141,4 @@ namespace cs {
 	constexpr char path_separator = '/';
 	constexpr char path_delimiter = ':';
 #endif
-}
+} // namespace cs

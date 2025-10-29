@@ -21,20 +21,23 @@ TEST_CASE("String: unicode operations", "[string]")
 
 TEST_CASE("basic_string_borrower default and borrow constructors", "[basic_string_borrower]")
 {
-	SECTION("default constructor") {
+	SECTION("default constructor")
+	{
 		byte_string_borrower b;
 		REQUIRE(b.view().empty());
 		REQUIRE(b.access() == nullptr);
 	}
 
-	SECTION("borrow from const char*") {
+	SECTION("borrow from const char*")
+	{
 		const char *s = "hello";
 		byte_string_borrower b(s);
 		REQUIRE(b.view() == "hello");
 		REQUIRE(b.access() == nullptr);
 	}
 
-	SECTION("borrow from string_view") {
+	SECTION("borrow from string_view")
+	{
 		byte_string_t str = "world";
 		byte_string_view view = str;
 		byte_string_borrower b = view;

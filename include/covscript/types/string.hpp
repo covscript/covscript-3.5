@@ -3,12 +3,14 @@
 #include <memory>
 #include <string>
 
-namespace cs {
+namespace cs
+{
 	using std::to_string;
 
 	template <typename CharT,
 	          template <typename> class allocator_t = default_allocator>
-	class basic_string_borrower final {
+	class basic_string_borrower final
+	{
 		using stl_string = std::basic_string<CharT>;
 		using stl_string_view = std::basic_string_view<CharT>;
 		using allocator_type = allocator_t<stl_string>;
@@ -24,7 +26,8 @@ namespace cs {
 
 		void destroy()
 		{
-			if (m_own && m_data) {
+			if (m_own && m_data)
+			{
 				stl_string *p = static_cast<stl_string *>(m_data);
 				p->~basic_string();
 				get_allocator().deallocate(p, 1);
@@ -33,7 +36,7 @@ namespace cs {
 			m_own = false;
 		}
 
-	public:
+	   public:
 		basic_string_borrower() noexcept = default;
 
 		basic_string_borrower(const CharT *str) noexcept : m_data(const_cast<CharT *>(str)), m_own(false) {}
@@ -49,7 +52,8 @@ namespace cs {
 
 		basic_string_borrower(const basic_string_borrower &other) : m_own(other.m_own)
 		{
-			if (other.m_own) {
+			if (other.m_own)
+			{
 				stl_string *p = get_allocator().allocate(1);
 				::new (p) stl_string(*static_cast<stl_string *>(other.m_data));
 				m_data = p;
@@ -59,7 +63,7 @@ namespace cs {
 		}
 
 		basic_string_borrower(basic_string_borrower &&other) noexcept
-			: m_data(other.m_data), m_own(other.m_own)
+		    : m_data(other.m_data), m_own(other.m_own)
 		{
 			other.m_data = nullptr;
 			other.m_own = false;
@@ -67,10 +71,12 @@ namespace cs {
 
 		basic_string_borrower &operator=(const basic_string_borrower &other)
 		{
-			if (this != &other) {
+			if (this != &other)
+			{
 				destroy();
 				m_own = other.m_own;
-				if (other.m_own) {
+				if (other.m_own)
+				{
 					stl_string *p = get_allocator().allocate(1);
 					::new (p) stl_string(*static_cast<stl_string *>(other.m_data));
 					m_data = p;
@@ -83,7 +89,8 @@ namespace cs {
 
 		basic_string_borrower &operator=(basic_string_borrower &&other) noexcept
 		{
-			if (this != &other) {
+			if (this != &other)
+			{
 				destroy();
 				m_data = other.m_data;
 				m_own = other.m_own;
@@ -137,7 +144,8 @@ namespace cs {
 	using byte_string_borrower = basic_string_borrower<char>;
 	using unicode_string_borrower = basic_string_borrower<char32_t>;
 
-	namespace unicode {
+	namespace unicode
+	{
 		bool is_valid(byte_string_view) noexcept;
 
 		uchar_t next(byte_string_t::const_iterator &);
@@ -145,5 +153,5 @@ namespace cs {
 		unicode_string_t byte_to_unicode(byte_string_view);
 
 		byte_string_t unicode_to_byte(unicode_string_view) noexcept;
-	}
-}
+	} // namespace unicode
+} // namespace cs
