@@ -229,7 +229,7 @@ namespace cs
 		template <typename T, typename store_t = cs_impl::var_storage_t<T>>
 		bool is_type_of() const
 		{
-			return usable() ? m_dispatcher == &dispatcher_class<store_t>::dispatcher : std::is_same_v<store_t, null_t>;
+			return usable() ? (m_dispatcher == &dispatcher_class<store_t>::dispatcher || type() == typeid(T)) : std::is_same_v<store_t, null_t>;
 		}
 
 		integer_t to_integer() const
@@ -321,7 +321,7 @@ namespace cs
 		template <typename T, typename store_t = cs_impl::var_storage_t<T>>
 		inline store_t &val()
 		{
-			if (m_dispatcher == &dispatcher_class<store_t>::dispatcher)
+			if (m_dispatcher == &dispatcher_class<store_t>::dispatcher || type() == typeid(T))
 				return *static_cast<store_t *>(m_dispatcher(var_op::get, this, nullptr)._ptr);
 			else if (m_dispatcher == nullptr)
 				throw runtime_error("Instance null variable.");
@@ -333,7 +333,7 @@ namespace cs
 		template <typename T, typename store_t = cs_impl::var_storage_t<T>>
 		inline const store_t &const_val() const
 		{
-			if (m_dispatcher == &dispatcher_class<store_t>::dispatcher)
+			if (m_dispatcher == &dispatcher_class<store_t>::dispatcher || type() == typeid(T))
 				return *static_cast<const store_t *>(m_dispatcher(var_op::get, this, nullptr)._ptr);
 			else if (m_dispatcher == nullptr)
 				throw runtime_error("Instance null variable.");

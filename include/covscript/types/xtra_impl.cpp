@@ -320,20 +320,16 @@ cs::basic_var_borrower<align_size, allocator_t> cs::basic_var<align_size, alloca
 			return cs_impl::operators::escape<borrower_t>((is_const ? lhs : const_cast<basic_var *>(lhs))->template unchecked_get<T>());
 		case operators_type::selfinc:
 			if (!is_const)
-			{
 				cs_impl::operators::selfinc(const_cast<basic_var *>(lhs)->template unchecked_get<T>());
-				break;
-			}
 			else
 				throw lang_error("Operator ++ requires non-const access to variable.");
+			break;
 		case operators_type::selfdec:
 			if (!is_const)
-			{
 				cs_impl::operators::selfdec(const_cast<basic_var *>(lhs)->template unchecked_get<T>());
-				break;
-			}
 			else
 				throw lang_error("Operator -- requires non-const access to variable.");
+			break;
 		// Special operators, type check finished outside.
 		case operators_type::compare:
 			return cs_impl::operators::compare(lhs->template unchecked_get<T>(), static_cast<const basic_var *>(rhs)->template unchecked_get<T>());
