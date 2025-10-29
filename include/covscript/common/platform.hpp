@@ -142,3 +142,9 @@ namespace cs
 	constexpr char path_delimiter = ':';
 #endif
 } // namespace cs
+
+#ifdef __cpp_lib_hardware_interference_size
+#define COVSCRIPT_CACHELINE_SIZE (std::hardware_constructive_interference_size)
+#else
+#define COVSCRIPT_CACHELINE_SIZE 64
+#endif

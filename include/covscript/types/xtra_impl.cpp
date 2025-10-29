@@ -1,6 +1,6 @@
-// This file is extension for variable.hpp
+// This file is extension for types
 #pragma once
-#include <covscript/types/variable.hpp>
+#include <covscript/types/types.hpp>
 
 namespace cs_impl
 {
@@ -204,6 +204,95 @@ namespace cs_impl::operators
 		throw cs::lang_error(cs::byte_string_t("Type ") + get_name_of_type<T>().data() + " does not support func(...) operator.");
 	}
 } // namespace cs_impl::operators
+
+template <std::size_t align_size, template <typename> class allocator_t>
+template <typename T>
+typename cs::basic_var<align_size, allocator_t>::var_op_result cs::basic_var<align_size, allocator_t>::var_op_svo_dispatcher<T>::dispatcher(
+    cs::basic_var<align_size, allocator_t>::var_op op, const cs::basic_var<align_size, allocator_t> *lhs, void *rhs)
+{
+	const T *ptr = reinterpret_cast<const T *>(&lhs->m_store.buffer);
+	var_op_result result;
+	switch (op)
+	{
+		case var_op::get:
+			result._ptr = const_cast<T *>(ptr);
+			break;
+		case var_op::copy:
+			::new (&static_cast<basic_var *>(rhs)->m_store.buffer) T(*ptr);
+			break;
+		case var_op::move:
+			::new (&static_cast<basic_var *>(rhs)->m_store.buffer) T(std::move(*ptr));
+			break;
+		case var_op::destroy:
+			ptr->~T();
+			break;
+		case var_op::rtti_type:
+			result._typeid = &typeid(T);
+			break;
+		case var_op::type_name:
+			*static_cast<byte_string_borrower *>(rhs) = cs_impl::get_name_of_type<T>();
+			break;
+		case var_op::to_integer:
+			result._int = cs_impl::to_integer(*ptr);
+			break;
+		case var_op::to_string:
+			*static_cast<byte_string_borrower *>(rhs) = cs_impl::to_string(*ptr);
+			break;
+		case var_op::hash:
+			result._hash = cs_impl::hash<T>(*ptr);
+			break;
+	}
+	return result;
+}
+
+template <std::size_t align_size, template <typename> class allocator_t>
+template <typename T>
+typename cs::basic_var<align_size, allocator_t>::var_op_result cs::basic_var<align_size, allocator_t>::var_op_heap_dispatcher<T>::dispatcher(
+    cs::basic_var<align_size, allocator_t>::var_op op, const cs::basic_var<align_size, allocator_t> *lhs, void *rhs)
+{
+	const T *ptr = static_cast<const T *>(lhs->m_store.ptr);
+	var_op_result result;
+	switch (op)
+	{
+		case var_op::get:
+			result._ptr = const_cast<T *>(ptr);
+			break;
+		case var_op::copy:
+		{
+			T *nptr = get_allocator<T>().allocate(1);
+			::new (nptr) T(*ptr);
+			static_cast<basic_var *>(rhs)->m_store.ptr = nptr;
+			break;
+		}
+		case var_op::move:
+		{
+			T *nptr = get_allocator<T>().allocate(1);
+			::new (nptr) T(std::move(*ptr));
+			static_cast<basic_var *>(rhs)->m_store.ptr = nptr;
+			break;
+		}
+		case var_op::destroy:
+			ptr->~T();
+			get_allocator<T>().deallocate(const_cast<T *>(ptr), 1);
+			break;
+		case var_op::rtti_type:
+			result._typeid = &typeid(T);
+			break;
+		case var_op::type_name:
+			*static_cast<byte_string_borrower *>(rhs) = cs_impl::get_name_of_type<T>();
+			break;
+		case var_op::to_integer:
+			result._int = cs_impl::to_integer(*ptr);
+			break;
+		case var_op::to_string:
+			*static_cast<byte_string_borrower *>(rhs) = cs_impl::to_string(*ptr);
+			break;
+		case var_op::hash:
+			result._hash = cs_impl::hash<T>(*ptr);
+			break;
+	}
+	return result;
+}
 
 template <std::size_t align_size, template <typename> class allocator_t>
 template <typename T>

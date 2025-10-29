@@ -25,6 +25,7 @@ namespace cs
 	using list = std::list<var>;
 	using fwd_list = std::forward_list<var>;
 	using array = std::deque<var>;
+	using fwd_array = std::vector<var>;
 	using pair = std::pair<var, var>;
 
 #ifndef CS_COMPATIBILITY_MODE
@@ -42,3 +43,5 @@ namespace cs
 	using hash_set = set_t<var>;
 	using hash_map = map_t<var, var>;
 } // namespace cs
+
+#include "covscript/types/xtra_impl.cpp"

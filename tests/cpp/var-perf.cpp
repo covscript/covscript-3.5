@@ -5,7 +5,7 @@
 #include <string>
 #include <cstdint>
 #include <array>
-#include <covscript/types/variable.hpp>
+#include <covscript/types/types.hpp>
 
 using namespace std::chrono;
 

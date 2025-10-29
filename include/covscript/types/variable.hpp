@@ -10,10 +10,9 @@
 #include <cstring>
 #include <cstdint>
 #include <bitset>
-#include <new>
 
-#ifndef COVSCRIPT_SVO_ALIGN
-#define COVSCRIPT_SVO_ALIGN (std::hardware_destructive_interference_size)
+#ifndef COVSCRIPT_SVO_ALIGN_SIZE
+#define COVSCRIPT_SVO_ALIGN_SIZE COVSCRIPT_CACHELINE_SIZE
 #endif
 
 namespace cs
@@ -72,42 +71,7 @@ namespace cs
 			{
 				::new (&val->m_store.buffer) T(std::forward<ArgsT>(args)...);
 			}
-			static var_op_result dispatcher(var_op op, const basic_var *lhs, void *rhs)
-			{
-				const T *ptr = reinterpret_cast<const T *>(&lhs->m_store.buffer);
-				var_op_result result;
-				switch (op)
-				{
-					case var_op::get:
-						result._ptr = const_cast<T *>(ptr);
-						break;
-					case var_op::copy:
-						::new (&static_cast<basic_var *>(rhs)->m_store.buffer) T(*ptr);
-						break;
-					case var_op::move:
-						::new (&static_cast<basic_var *>(rhs)->m_store.buffer) T(std::move(*ptr));
-						break;
-					case var_op::destroy:
-						ptr->~T();
-						break;
-					case var_op::rtti_type:
-						result._typeid = &typeid(T);
-						break;
-					case var_op::type_name:
-						*static_cast<byte_string_borrower *>(rhs) = cs_impl::get_name_of_type<T>();
-						break;
-					case var_op::to_integer:
-						result._int = cs_impl::to_integer(*ptr);
-						break;
-					case var_op::to_string:
-						*static_cast<byte_string_borrower *>(rhs) = cs_impl::to_string(*ptr);
-						break;
-					case var_op::hash:
-						result._hash = cs_impl::hash<T>(*ptr);
-						break;
-				}
-				return result;
-			}
+			static var_op_result dispatcher(var_op, const basic_var *, void *);
 		};
 
 		template <typename T>
@@ -120,51 +84,7 @@ namespace cs
 				::new (ptr) T(std::forward<ArgsT>(args)...);
 				val->m_store.ptr = ptr;
 			}
-			static var_op_result dispatcher(var_op op, const basic_var *lhs, void *rhs)
-			{
-				const T *ptr = static_cast<const T *>(lhs->m_store.ptr);
-				var_op_result result;
-				switch (op)
-				{
-					case var_op::get:
-						result._ptr = const_cast<T *>(ptr);
-						break;
-					case var_op::copy:
-					{
-						T *nptr = get_allocator<T>().allocate(1);
-						::new (nptr) T(*ptr);
-						static_cast<basic_var *>(rhs)->m_store.ptr = nptr;
-						break;
-					}
-					case var_op::move:
-					{
-						T *nptr = get_allocator<T>().allocate(1);
-						::new (nptr) T(std::move(*ptr));
-						static_cast<basic_var *>(rhs)->m_store.ptr = nptr;
-						break;
-					}
-					case var_op::destroy:
-						ptr->~T();
-						get_allocator<T>().deallocate(const_cast<T *>(ptr), 1);
-						break;
-					case var_op::rtti_type:
-						result._typeid = &typeid(T);
-						break;
-					case var_op::type_name:
-						*static_cast<byte_string_borrower *>(rhs) = cs_impl::get_name_of_type<T>();
-						break;
-					case var_op::to_integer:
-						result._int = cs_impl::to_integer(*ptr);
-						break;
-					case var_op::to_string:
-						*static_cast<byte_string_borrower *>(rhs) = cs_impl::to_string(*ptr);
-						break;
-					case var_op::hash:
-						result._hash = cs_impl::hash<T>(*ptr);
-						break;
-				}
-				return result;
-			}
+			static var_op_result dispatcher(var_op, const basic_var *, void *);
 		};
 
 		using dispatcher_t = var_op_result (*)(var_op, const basic_var *, void *);
@@ -584,9 +504,6 @@ namespace cs
 		}
 	};
 
-	using var = basic_var<COVSCRIPT_SVO_ALIGN, default_allocator>;
-	using var_borrower = basic_var_borrower<COVSCRIPT_SVO_ALIGN, default_allocator>;
-	using fwd_array = std::vector<var>;
+	using var = basic_var<COVSCRIPT_SVO_ALIGN_SIZE, default_allocator>;
+	using var_borrower = basic_var_borrower<COVSCRIPT_SVO_ALIGN_SIZE, default_allocator>;
 } // namespace cs
-
-#include "covscript/types/xtra_var.cpp"
