@@ -1,7 +1,7 @@
 #include <covscript/types/numeric.hpp>
 #include <catch2/catch_all.hpp>
 
-using namespace cs;
+using namespace csvm;
 
 TEST_CASE("numeric_t constructors and type detection", "[numeric_t]")
 {

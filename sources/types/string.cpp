@@ -3,7 +3,7 @@
 #include <covscript/types/exception.hpp>
 #include <utfcpp/utf8.h>
 
-namespace cs::unicode
+namespace csvm::unicode
 {
 	bool is_valid(byte_string_view str) noexcept
 	{
@@ -42,9 +42,9 @@ namespace cs::unicode
 		utf8::unchecked::utf32to8(ustr.begin(), ustr.end(), std::back_inserter(str));
 		return str;
 	}
-} // namespace cs::unicode
+} // namespace csvm::unicode
 
-namespace cs
+namespace csvm
 {
 	byte_string_t numeric_t::to_string() const
 	{
@@ -53,4 +53,4 @@ namespace cs
 		else
 			return cs::to_string(data._num);
 	}
-} // namespace cs
+} // namespace csvm

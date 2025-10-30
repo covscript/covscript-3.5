@@ -1,7 +1,7 @@
 #include <covscript/types/basic.hpp>
 #include <catch2/catch_all.hpp>
 
-using namespace cs;
+using namespace csvm;
 
 TEST_CASE("stack basic operations", "[stack]")
 {

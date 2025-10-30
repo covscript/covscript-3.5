@@ -1,7 +1,7 @@
 #include <covscript/types/types.hpp>
 #include <catch2/catch_all.hpp>
 
-using namespace cs;
+using namespace csvm;
 
 struct Small
 {
@@ -93,7 +93,7 @@ TEST_CASE("basic_var: SVO small type construction and access", "[basic_var][svo]
 
 TEST_CASE("basic_var: heap path with large type", "[basic_var][heap]")
 {
-	static_assert(sizeof(Large) > cs::basic_var<COVSCRIPT_SVO_ALIGN_SIZE>::internal_svo_threshold(), "Large should be heap-bound for test");
+	static_assert(sizeof(Large) > cs::basic_var<CSVM_SVO_ALIGN_SIZE>::internal_svo_threshold(), "Large should be heap-bound for test");
 	auto v = cs::var::make<Large>(char(7));
 	REQUIRE(v.usable());
 	REQUIRE(v.is_type_of<Large>());

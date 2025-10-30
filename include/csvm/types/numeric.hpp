@@ -1,11 +1,11 @@
 #pragma once
-#include <covscript/types/basic.hpp>
+#include <csvm/types/basic.hpp>
 #include <type_traits>
 #include <cstdint>
 #include <cstdlib>
 #include <string>
 
-namespace cs
+namespace csvm
 {
 	class numeric_t final
 	{
@@ -393,4 +393,4 @@ namespace cs
 
 		byte_string_t to_string() const;
 	};
-} // namespace cs
+} // namespace csvm

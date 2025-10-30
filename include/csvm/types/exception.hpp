@@ -1,8 +1,8 @@
 #pragma once
-#include <covscript/types/string.hpp>
+#include <csvm/types/string.hpp>
 #include <exception>
 
-namespace cs
+namespace csvm
 {
 	struct csym_info;
 
@@ -176,4 +176,4 @@ namespace cs
 			return this->mWhat.data();
 		}
 	};
-} // namespace cs
+} // namespace csvm

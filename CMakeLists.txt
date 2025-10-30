@@ -1,42 +1,42 @@
 cmake_minimum_required(VERSION 3.13)
 
-project(covscript)
+project(csvm)
 
 set(CMAKE_CXX_STANDARD 17)
 
-option(COVSCRIPT_ENABLE_TESTS "Build with unit tests" ON)
+option(CSVM_ENABLE_TESTS "Build with unit tests" ON)
 
 add_subdirectory(third-party)
 
 file(GLOB SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/sources/**/*.cpp")
 
-add_library(covscript STATIC ${SOURCES})
-target_include_directories(covscript PUBLIC include)
-target_include_directories(covscript PUBLIC third-party)
+add_library(csvm STATIC ${SOURCES})
+target_include_directories(csvm PUBLIC include)
+target_include_directories(csvm PUBLIC third-party)
 
 if (MSVC)
-    target_compile_options(covscript PUBLIC /O2 /EHsc /utf-8 /DNDEBUG /Zc:__cplusplus /MP /w)
-    set_target_properties(covscript PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+    target_compile_options(csvm PUBLIC /O2 /EHsc /utf-8 /DNDEBUG /Zc:__cplusplus /MP /w)
+    set_target_properties(csvm PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
     set(CMAKE_RC_FLAGS "/nologo /c65001")
 
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(covscript PUBLIC -O2 -DNDEBUG -fPIC)
+    target_compile_options(csvm PUBLIC -O2 -DNDEBUG -fPIC)
     if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        target_compile_options(covscript PUBLIC -Wno-interference-size)
+        target_compile_options(csvm PUBLIC -Wno-interference-size)
     endif ()
     if (WIN32)
-        target_compile_options(covscript PUBLIC --static)
+        target_compile_options(csvm PUBLIC --static)
     elseif (UNIX AND NOT APPLE)
-        target_compile_options(covscript PUBLIC -fno-plt)
+        target_compile_options(csvm PUBLIC -fno-plt)
     endif ()
 endif ()
 
-if (CS_COMPATIBILITY_MODE)
+if (CSVM_COMPATIBILITY_MODE)
     message(STATUS "CovScript: Configuring Compatibility Mode")
-    target_compile_definitions(covscript PUBLIC CS_COMPATIBILITY_MODE)
+    target_compile_definitions(csvm PUBLIC CSVM_COMPATIBILITY_MODE)
 endif ()
 
-if(COVSCRIPT_ENABLE_TESTS)
+if(CSVM_ENABLE_TESTS)
     message(STATUS "CovScript: Build with unit tests")
     add_subdirectory(third-party/catch2)
     add_subdirectory(tests/cpp)

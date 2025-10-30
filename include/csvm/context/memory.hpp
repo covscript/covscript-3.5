@@ -1,15 +1,15 @@
 #pragma once
-#include <covscript/common/platform.hpp>
-#include <covscript/types/types.hpp>
+#include <csvm/common/platform.hpp>
+#include <csvm/types/types.hpp>
 #include <vector>
 #include <memory>
 #include <list>
 
-#ifndef COVSCRIPT_GC_THRESHOLD
-#define COVSCRIPT_GC_THRESHOLD 1024
+#ifndef CSVM_GC_THRESHOLD
+#define CSVM_GC_THRESHOLD 1024
 #endif
 
-namespace cs
+namespace csvm
 {
 	// Note: each fiber/thread should have its own memory manager instance.
 	class memory_manager final
@@ -33,7 +33,7 @@ namespace cs
 		class heap_pointer final
 		{
 			friend class memory_manager;
-#ifdef COVSCRIPT_DEBUG
+#ifdef CSVM_DEBUG
 			string name = "<Unknown>";
 #endif
 			mutable std::size_t reachable_count = 0;
@@ -53,7 +53,7 @@ namespace cs
 		class domain final
 		{
 			friend class memory_manager;
-#ifdef COVSCRIPT_DEBUG
+#ifdef CSVM_DEBUG
 			string name = "<Temporary>";
 #endif
 			bool is_temp = true;
@@ -82,8 +82,8 @@ namespace cs
 
 	   public:
 		memory_manager(string_view name = "<Global>",
-		               std::size_t stack_size = COVSCRIPT_STACK_PRESERVE,
-		               std::size_t gc_threshold = COVSCRIPT_GC_THRESHOLD) : m_gc_threshold(gc_threshold)
+		               std::size_t stack_size = CSVM_STACK_PRESERVE,
+		               std::size_t gc_threshold = CSVM_GC_THRESHOLD) : m_gc_threshold(gc_threshold)
 		{
 			m_stack.resize(stack_size);
 			enter_domain(name);
@@ -99,7 +99,7 @@ namespace cs
 			domain &d = get_top_domain();
 			d.is_temp = !declare;
 			d.stack_start = stack_start;
-#ifdef COVSCRIPT_DEBUG
+#ifdef CSVM_DEBUG
 			d.name = name.view();
 #endif
 		}
@@ -194,7 +194,7 @@ namespace cs
 
 		std::size_t gc(bool force = false);
 	};
-} // namespace cs
+} // namespace csvm
 
 template <>
 void cs_impl::mark_reachable<cs::memory_manager::heap_pointer>(const cs::memory_manager::heap_pointer &ptr)

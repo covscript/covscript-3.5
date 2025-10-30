@@ -1,11 +1,11 @@
 #pragma once
-#include <covscript/common/platform.hpp>
-#include <covscript/types/types.hpp>
-#include <covscript/context/memory.hpp>
+#include <csvm/common/platform.hpp>
+#include <csvm/types/types.hpp>
+#include <csvm/context/memory.hpp>
 #include <memory>
 #include <vector>
 
-namespace cs
+namespace csvm
 {
 	enum class fiber_state
 	{
@@ -97,7 +97,7 @@ namespace cs
 		std::vector<string> shell_args;
 		string package_name = "<Unknown>";
 		string file_path = "<Unknown>";
-		std::size_t stack_size = COVSCRIPT_STACK_PRESERVE;
+		std::size_t stack_size = CSVM_STACK_PRESERVE;
 		stack<var> call_stack;
 		stack<fiber_t> fiber_stack;
 		memory_manager memory;
@@ -109,7 +109,7 @@ namespace cs
 			if (stack_size >= 1000)
 				return stack_size / 10;
 			else
-				return COVSCRIPT_STACK_PRESERVE;
+				return CSVM_STACK_PRESERVE;
 		}
 
 		void stack_reserve(std::size_t size)
@@ -130,4 +130,4 @@ namespace cs
 
 		void yield();
 	} // namespace fiber
-} // namespace cs
+} // namespace csvm

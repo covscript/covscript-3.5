@@ -1,8 +1,8 @@
 #pragma once
-#include <covscript/types/string.hpp>
-#include <covscript/types/exception.hpp>
+#include <csvm/types/string.hpp>
+#include <csvm/types/exception.hpp>
 
-namespace cs_impl
+namespace csvm_impl
 {
 	// Name Demangle
 	cs::byte_string_t cxx_demangle(const char *);
@@ -314,4 +314,4 @@ namespace cs_impl
 			call     // func(args)
 		};
 	}
-} // namespace cs_impl
+} // namespace csvm_impl

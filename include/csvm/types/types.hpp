@@ -1,11 +1,11 @@
 #pragma once
-#include <covscript/types/basic.hpp>
-#include <covscript/types/string.hpp>
-#include <covscript/types/numeric.hpp>
-#include <covscript/types/exception.hpp>
-#include <covscript/types/variable.hpp>
+#include <csvm/types/basic.hpp>
+#include <csvm/types/string.hpp>
+#include <csvm/types/numeric.hpp>
+#include <csvm/types/exception.hpp>
+#include <csvm/types/variable.hpp>
 
-#ifndef CS_COMPATIBILITY_MODE
+#ifndef CSVM_COMPATIBILITY_MODE
 #include <parallel_hashmap/phmap.h>
 #else
 #include <unordered_map>
@@ -18,7 +18,7 @@
 #include <vector>
 #include <utility>
 
-namespace cs
+namespace csvm
 {
 	using string = byte_string_t;
 	using string_view = byte_string_view;
@@ -32,7 +32,7 @@ namespace cs
 	using fwd_array = std::vector<var>;
 	using pair = std::pair<var, var>;
 
-#ifndef CS_COMPATIBILITY_MODE
+#ifndef CSVM_COMPATIBILITY_MODE
 	template <typename _kT, typename _vT>
 	using map_t = phmap::flat_hash_map<_kT, _vT>;
 	template <typename _Tp>
@@ -46,6 +46,6 @@ namespace cs
 
 	using hash_set = set_t<var>;
 	using hash_map = map_t<var, var>;
-} // namespace cs
+} // namespace csvm
 
-#include "covscript/types/xtra_impl.cpp"
+#include "csvm/types/xtra_impl.cpp"

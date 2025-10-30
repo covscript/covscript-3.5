@@ -1,21 +1,21 @@
 #pragma once
-#include <covscript/common/platform.hpp>
-#include <covscript/types/basic.hpp>
-#include <covscript/types/numeric.hpp>
-#include <covscript/types/string.hpp>
-#include <covscript/types/exception.hpp>
-#include <covscript/types/support.hpp>
+#include <csvm/common/platform.hpp>
+#include <csvm/types/basic.hpp>
+#include <csvm/types/numeric.hpp>
+#include <csvm/types/string.hpp>
+#include <csvm/types/exception.hpp>
+#include <csvm/types/support.hpp>
 #include <type_traits>
 #include <typeindex>
 #include <cstring>
 #include <cstdint>
 #include <bitset>
 
-#ifndef COVSCRIPT_SVO_ALIGN_SIZE
-#define COVSCRIPT_SVO_ALIGN_SIZE COVSCRIPT_CACHELINE_SIZE
+#ifndef CSVM_SVO_ALIGN_SIZE
+#define CSVM_SVO_ALIGN_SIZE CSVM_CACHELINE_SIZE
 #endif
 
-namespace cs
+namespace csvm
 {
 	struct null_t
 	{
@@ -511,6 +511,6 @@ namespace cs
 		}
 	};
 
-	using var = basic_var<COVSCRIPT_SVO_ALIGN_SIZE, default_allocator>;
-	using var_borrower = basic_var_borrower<COVSCRIPT_SVO_ALIGN_SIZE, default_allocator>;
-} // namespace cs
+	using var = basic_var<CSVM_SVO_ALIGN_SIZE, default_allocator>;
+	using var_borrower = basic_var_borrower<CSVM_SVO_ALIGN_SIZE, default_allocator>;
+} // namespace csvm

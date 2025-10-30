@@ -1,9 +1,9 @@
 #pragma once
-#include <covscript/types/basic.hpp>
+#include <csvm/types/basic.hpp>
 #include <memory>
 #include <string>
 
-namespace cs
+namespace csvm
 {
 	using std::to_string;
 
@@ -154,4 +154,4 @@ namespace cs
 
 		byte_string_t unicode_to_byte(unicode_string_view) noexcept;
 	} // namespace unicode
-} // namespace cs
+} // namespace csvm

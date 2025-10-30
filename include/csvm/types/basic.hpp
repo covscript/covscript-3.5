@@ -3,15 +3,15 @@
 #include <string>
 #include <vector>
 
-#ifndef COVSCRIPT_STACK_PRESERVE
-#define COVSCRIPT_STACK_PRESERVE 64
+#ifndef CSVM_STACK_PRESERVE
+#define CSVM_STACK_PRESERVE 64
 #endif
 
-#ifndef COVSCRIPT_BLOCK_ALLOCATOR_SIZE
-#define COVSCRIPT_BLOCK_ALLOCATOR_SIZE 64
+#ifndef CSVM_BLOCK_ALLOCATOR_SIZE
+#define CSVM_BLOCK_ALLOCATOR_SIZE 64
 #endif
 
-namespace cs
+namespace csvm
 {
 	using bool_t = bool;
 	using char_t = char;
@@ -39,7 +39,7 @@ namespace cs
 
 		stack()
 		{
-			resize(COVSCRIPT_STACK_PRESERVE);
+			resize(CSVM_STACK_PRESERVE);
 		}
 
 		explicit stack(std::size_t s)
@@ -144,7 +144,7 @@ namespace cs
 	};
 
 	template <typename T,
-	          std::size_t block_size = COVSCRIPT_BLOCK_ALLOCATOR_SIZE,
+	          std::size_t block_size = CSVM_BLOCK_ALLOCATOR_SIZE,
 	          template <typename> class allocator_t = std::allocator>
 	class allocator_type
 	{
@@ -186,11 +186,11 @@ namespace cs
 		}
 	};
 
-#ifdef COVSCRIPT_COMPATIBILITY_MODE
+#ifdef CSVM_COMPATIBILITY_MODE
 	template <typename T>
 	using default_allocator = std::allocator<T>;
 #else
 	template <typename T>
 	using default_allocator = allocator_type<T>;
 #endif
-} // namespace cs
+} // namespace csvm

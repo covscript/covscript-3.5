@@ -1,6 +1,6 @@
 #include <covscript/types/variable.hpp>
 
-#ifdef COVSCRIPT_PLATFORM_WIN32
+#ifdef CSVM_PLATFORM_WIN32
 
 #include <shlobj.h>
 
@@ -24,7 +24,7 @@
 #include <windows.h>
 #include <Dbghelp.h>
 #pragma comment(lib, "DbgHelp")
-namespace cs_impl
+namespace csvm_impl
 {
 	cs::byte_string_t cxx_demangle(const char *name)
 	{
@@ -35,12 +35,12 @@ namespace cs_impl
 		else
 			return name;
 	}
-} // namespace cs_impl
+} // namespace csvm_impl
 #elif defined(__GNUC__) || defined(__clang__)
 
 #include <cxxabi.h>
 
-namespace cs_impl
+namespace csvm_impl
 {
 	cs::byte_string_t cxx_demangle(const char *name)
 	{
@@ -53,5 +53,5 @@ namespace cs_impl
 		else
 			return name;
 	}
-} // namespace cs_impl
+} // namespace csvm_impl
 #endif

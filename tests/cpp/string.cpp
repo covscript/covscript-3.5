@@ -1,7 +1,7 @@
 #include <covscript/types/string.hpp>
 #include <catch2/catch_all.hpp>
 
-using namespace cs;
+using namespace csvm;
 
 TEST_CASE("String: basic operations", "[string]")
 {

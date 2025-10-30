@@ -2,7 +2,7 @@
 #pragma once
 #include <covscript/types/types.hpp>
 
-namespace cs_impl
+namespace csvm_impl
 {
 	template <>
 	cs::integer_t to_integer<cs::numeric_t>(const cs::numeric_t &val)
@@ -100,7 +100,7 @@ namespace cs_impl
 		data.first.gc_mark_reachable();
 		data.second.gc_mark_reachable();
 	}
-} // namespace cs_impl
+} // namespace csvm_impl
 
 // std::ostream &operator<<(std::ostream &, const cs::var &);
 
@@ -116,7 +116,7 @@ namespace std
 	};
 } // namespace std
 
-namespace cs_impl::operators
+namespace csvm_impl::operators
 {
 	template <typename var, typename T>
 	static var add(const T &lhs, const var &rhs)
@@ -255,7 +255,7 @@ namespace cs_impl::operators
 	{
 		throw cs::lang_error(cs::byte_string_t("Type ") + get_name_of_type<T>().data() + " does not support func(...) operator.");
 	}
-} // namespace cs_impl::operators
+} // namespace csvm_impl::operators
 
 template <std::size_t align_size, template <typename> class allocator_t>
 template <typename T>
