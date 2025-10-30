@@ -23,10 +23,10 @@ namespace cs
 			std::shared_ptr<bool> is_active;
 			const memory_manager *manager = nullptr;
 
-			stack_visitor() = default;
-
 		   public:
 			string name;
+			stack_visitor() = default;
+			stack_visitor(string_view str) : name(str) {}
 		};
 
 		// For visiting heap memory

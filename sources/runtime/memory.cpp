@@ -3,7 +3,7 @@
 std::size_t cs::memory_manager::gc(bool force)
 {
 	// When not reach threshold, return
-	if (m_heap.size() - m_last_heap_size < m_gc_threshold && !force)
+	if (m_heap.size() == m_last_heap_size || (m_heap.size() < m_last_heap_size + m_gc_threshold && !force))
 		return 0;
 	// Clear reachable flag
 	for (auto &ptr : m_heap)
