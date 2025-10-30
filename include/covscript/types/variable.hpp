@@ -51,7 +51,8 @@ namespace cs
 			type_name,
 			to_integer,
 			to_string,
-			hash
+			hash,
+			mark_reachable
 		};
 
 		union var_op_result
@@ -263,6 +264,12 @@ namespace cs
 				return m_dispatcher(var_op::hash, this, nullptr)._hash;
 			else
 				return 0;
+		}
+
+		void gc_mark_reachable() const
+		{
+			if (usable())
+				m_dispatcher(var_op::mark_reachable, this, nullptr);
 		}
 
 		byte_string_borrower type_name() const

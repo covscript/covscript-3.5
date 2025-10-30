@@ -215,6 +215,12 @@ namespace cs_impl
 	}
 
 	template <typename T>
+	static void mark_reachable(const T &val)
+	{
+		// Implement for container or pointer
+	}
+
+	template <typename T>
 	struct to_string_if<T, false>
 	{
 		static cs::byte_string_borrower to_string(const T &)

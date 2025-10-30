@@ -48,6 +48,58 @@ namespace cs_impl
 	{
 		using type = std::type_index;
 	};
+
+	template <>
+	void mark_reachable<cs::list>(const cs::list &data)
+	{
+		for (auto &it : data)
+			it.gc_mark_reachable();
+	}
+
+	template <>
+	void mark_reachable<cs::fwd_list>(const cs::fwd_list &data)
+	{
+		for (auto &it : data)
+			it.gc_mark_reachable();
+	}
+
+	template <>
+	void mark_reachable<cs::array>(const cs::array &data)
+	{
+		for (auto &it : data)
+			it.gc_mark_reachable();
+	}
+
+	template <>
+	void mark_reachable<cs::fwd_array>(const cs::fwd_array &data)
+	{
+		for (auto &it : data)
+			it.gc_mark_reachable();
+	}
+
+	template <>
+	void mark_reachable<cs::hash_map>(const cs::hash_map &data)
+	{
+		for (auto &it : data)
+		{
+			it.first.gc_mark_reachable();
+			it.second.gc_mark_reachable();
+		}
+	}
+
+	template <>
+	void mark_reachable<cs::hash_set>(const cs::hash_set &data)
+	{
+		for (auto &it : data)
+			it.gc_mark_reachable();
+	}
+
+	template <>
+	void mark_reachable<cs::pair>(const cs::pair &data)
+	{
+		data.first.gc_mark_reachable();
+		data.second.gc_mark_reachable();
+	}
 } // namespace cs_impl
 
 // std::ostream &operator<<(std::ostream &, const cs::var &);
@@ -241,6 +293,9 @@ typename cs::basic_var<align_size, allocator_t>::var_op_result cs::basic_var<ali
 		case var_op::hash:
 			result._hash = cs_impl::hash<T>(*ptr);
 			break;
+		case var_op::mark_reachable:
+			cs_impl::mark_reachable<T>(*ptr);
+			break;
 	}
 	return result;
 }
@@ -289,6 +344,9 @@ typename cs::basic_var<align_size, allocator_t>::var_op_result cs::basic_var<ali
 			break;
 		case var_op::hash:
 			result._hash = cs_impl::hash<T>(*ptr);
+			break;
+		case var_op::mark_reachable:
+			cs_impl::mark_reachable<T>(*ptr);
 			break;
 	}
 	return result;

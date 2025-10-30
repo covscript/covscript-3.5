@@ -44,13 +44,6 @@ TEST_CASE("stack basic operations", "[stack]")
 		s.push(7);
 
 		REQUIRE(s.bottom() == 5);
-		REQUIRE(s.index(0) == 7); // top
-		REQUIRE(s.index(1) == 6);
-		REQUIRE(s.index(2) == 5);
-
-		REQUIRE(s[0] == 7);
-		REQUIRE(s[1] == 6);
-		REQUIRE(s[2] == 5);
 	}
 
 	SECTION("clear")

@@ -79,24 +79,24 @@ namespace cs
 			return m_impl.front();
 		}
 
-		inline T &index(std::size_t offset)
+		inline T &index(std::size_t index)
 		{
-			return m_impl.at(m_impl.size() - offset - 1);
+			return m_impl.at(index);
 		}
 
-		inline const T &index(std::size_t offset) const
+		inline const T &index(std::size_t index) const
 		{
-			return m_impl.at(m_impl.size() - offset - 1);
+			return m_impl.at(index);
 		}
 
-		inline T &operator[](std::size_t offset)
+		inline T &operator[](std::size_t index)
 		{
-			return m_impl[m_impl.size() - offset - 1];
+			return m_impl[index];
 		}
 
-		inline const T &operator[](std::size_t offset) const
+		inline const T &operator[](std::size_t index) const
 		{
-			return m_impl[m_impl.size() - offset - 1];
+			return m_impl[index];
 		}
 
 		template <typename... ArgsT>
