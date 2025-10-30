@@ -5,12 +5,12 @@
 namespace csvm_impl
 {
 	// Name Demangle
-	cs::byte_string_t cxx_demangle(const char *);
+	csvm::byte_string_t cxx_demangle(const char *);
 
 	template <typename T>
-	static cs::byte_string_view get_name_of_type()
+	static csvm::byte_string_view get_name_of_type()
 	{
-		static cs::byte_string_t name = cxx_demangle(typeid(T).name());
+		static csvm::byte_string_t name = cxx_demangle(typeid(T).name());
 		return name;
 	}
 
@@ -76,7 +76,7 @@ namespace csvm_impl
 		}
 
 		template <typename T>
-		static constexpr bool match(matcher<T, decltype(cs::to_string(std::declval<T>()))> *)
+		static constexpr bool match(matcher<T, decltype(csvm::to_string(std::declval<T>()))> *)
 		{
 			return true;
 		}
@@ -91,9 +91,9 @@ namespace csvm_impl
 	template <typename T>
 	struct to_string_if<T, true>
 	{
-		static cs::byte_string_borrower to_string(const T &val)
+		static csvm::byte_string_borrower to_string(const T &val)
 		{
-			return cs::to_string(val);
+			return csvm::to_string(val);
 		}
 	};
 
@@ -104,18 +104,18 @@ namespace csvm_impl
 	template <typename T>
 	struct to_integer_if<T, true>
 	{
-		static cs::integer_t to_integer(const T &val)
+		static csvm::integer_t to_integer(const T &val)
 		{
-			return static_cast<cs::integer_t>(val);
+			return static_cast<csvm::integer_t>(val);
 		}
 	};
 
 	template <typename T>
 	struct to_integer_if<T, false>
 	{
-		static cs::integer_t to_integer(const T &)
+		static csvm::integer_t to_integer(const T &)
 		{
-			throw cs::lang_error(cs::byte_string_t("Target type ") +
+			throw csvm::lang_error(csvm::byte_string_t("Target type ") +
 			                     get_name_of_type<T>().data() + " cannot convert to integer.");
 		}
 	};
@@ -170,7 +170,7 @@ namespace csvm_impl
 	{
 		static std::size_t hash(const X &val)
 		{
-			throw cs::lang_error(cs::byte_string_t("Target type ") +
+			throw csvm::lang_error(csvm::byte_string_t("Target type ") +
 			                     get_name_of_type<T>().data() + " unhashable.");
 		}
 	};
@@ -196,15 +196,15 @@ namespace csvm_impl
 	 * But if you do not have specialization, CovScript can also automatically detect related functions.
 	 */
 	template <typename T>
-	static cs::byte_string_borrower to_string(const T &val)
+	static csvm::byte_string_borrower to_string(const T &val)
 	{
 		return to_string_if<T, to_string_helper<T>::value>::to_string(val);
 	}
 
 	template <typename T>
-	static cs::integer_t to_integer(const T &val)
+	static csvm::integer_t to_integer(const T &val)
 	{
-		return to_integer_if<T, std::is_convertible<T, cs::integer_t>::value>::to_integer(val);
+		return to_integer_if<T, std::is_convertible<T, csvm::integer_t>::value>::to_integer(val);
 	}
 
 	template <typename T>
@@ -223,16 +223,16 @@ namespace csvm_impl
 	template <typename T>
 	struct to_string_if<T, false>
 	{
-		static cs::byte_string_borrower to_string(const T &)
+		static csvm::byte_string_borrower to_string(const T &)
 		{
-			return "[" + cs::byte_string_t(get_name_of_type<T>()) + "]";
+			return "[" + csvm::byte_string_t(get_name_of_type<T>()) + "]";
 		}
 	};
 
 	// template<typename T>
-	// static cs::namespace_t &get_ext()
+	// static csvm::namespace_t &get_ext()
 	// {
-	// 	throw cs::runtime_error(std::string("Target type \"") + cs_impl::cxx_demangle(cs_impl::get_name_of_type<T>()) +
+	// 	throw csvm::runtime_error(std::string("Target type \"") + csvm_impl::cxx_demangle(csvm_impl::get_name_of_type<T>()) +
 	// 	                        "\" doesn't have extension field.");
 	// }
 

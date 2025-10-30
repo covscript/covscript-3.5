@@ -94,7 +94,7 @@ namespace csvm
 		using dispatcher_class = std::conditional_t<(sizeof(T) > sizeof(aligned_storage_t)),
 		                                            var_op_heap_dispatcher<T>, var_op_svo_dispatcher<T>>;
 
-		using operators_type = cs_impl::operators::type;
+		using operators_type = csvm_impl::operators::type;
 
 		template <typename T>
 		static basic_var_borrower<align_size, allocator_t> call_operator(operators_type, bool, const basic_var *, void *);
@@ -197,7 +197,7 @@ namespace csvm
 
 		basic_var() noexcept = default;
 
-		template <typename T, typename store_t = cs_impl::var_storage_t<T>,
+		template <typename T, typename store_t = csvm_impl::var_storage_t<T>,
 		          typename = std::enable_if_t<!std::is_same_v<store_t, basic_var>>>
 		basic_var(T &&val)
 		{
@@ -227,7 +227,7 @@ namespace csvm
 				return typeid(null_t);
 		}
 
-		template <typename T, typename store_t = cs_impl::var_storage_t<T>>
+		template <typename T, typename store_t = csvm_impl::var_storage_t<T>>
 		bool is_type_of() const
 		{
 			return usable() ? (m_dispatcher == &dispatcher_class<store_t>::dispatcher || type() == typeid(T)) : std::is_same_v<store_t, null_t>;
@@ -281,7 +281,7 @@ namespace csvm
 				return borrower;
 			}
 			else
-				return cs_impl::get_name_of_type<null_t>();
+				return csvm_impl::get_name_of_type<null_t>();
 		}
 
 		basic_var &operator=(const basic_var &obj)
@@ -325,7 +325,7 @@ namespace csvm
 			return !compare(obj);
 		}
 
-		template <typename T, typename store_t = cs_impl::var_storage_t<T>>
+		template <typename T, typename store_t = csvm_impl::var_storage_t<T>>
 		inline store_t &val()
 		{
 			if (m_dispatcher == &dispatcher_class<store_t>::dispatcher || type() == typeid(T))
@@ -334,10 +334,10 @@ namespace csvm
 				throw runtime_error("Instance null variable.");
 			else
 				throw runtime_error("Instance variable with wrong type. Provided " +
-				                    cs_impl::cxx_demangle(typeid(T).name()) + ", expected " + type_name().data());
+				                    csvm_impl::cxx_demangle(typeid(T).name()) + ", expected " + type_name().data());
 		}
 
-		template <typename T, typename store_t = cs_impl::var_storage_t<T>>
+		template <typename T, typename store_t = csvm_impl::var_storage_t<T>>
 		inline const store_t &const_val() const
 		{
 			if (m_dispatcher == &dispatcher_class<store_t>::dispatcher || type() == typeid(T))
@@ -346,7 +346,7 @@ namespace csvm
 				throw runtime_error("Instance null variable.");
 			else
 				throw runtime_error("Instance variable with wrong type. Provided " +
-				                    cs_impl::cxx_demangle(typeid(T).name()) + ", expected " + type_name().data());
+				                    csvm_impl::cxx_demangle(typeid(T).name()) + ", expected " + type_name().data());
 		}
 
 		template <typename T>
@@ -425,7 +425,7 @@ namespace csvm
 			other.m_own = false;
 		}
 
-		template <typename T, typename store_t = cs_impl::var_storage_t<T>,
+		template <typename T, typename store_t = csvm_impl::var_storage_t<T>,
 		          typename = std::enable_if_t<!std::is_same_v<store_t, var> && !std::is_same_v<store_t, basic_var_borrower>>>
 		basic_var_borrower(T &&val) : m_own(true), m_const(false)
 		{
@@ -501,7 +501,7 @@ namespace csvm
 			return m_data == nullptr || m_data->is_null();
 		}
 
-		template <typename T, typename store_t = cs_impl::var_storage_t<T>>
+		template <typename T, typename store_t = csvm_impl::var_storage_t<T>>
 		const store_t &const_val()
 		{
 			if (m_data != nullptr)

@@ -1,6 +1,6 @@
-#include <covscript/types/string.hpp>
-#include <covscript/types/numeric.hpp>
-#include <covscript/types/exception.hpp>
+#include <csvm/types/string.hpp>
+#include <csvm/types/numeric.hpp>
+#include <csvm/types/exception.hpp>
 #include <utfcpp/utf8.h>
 
 namespace csvm::unicode
@@ -49,8 +49,8 @@ namespace csvm
 	byte_string_t numeric_t::to_string() const
 	{
 		if (type)
-			return cs::to_string(data._int);
+			return csvm::to_string(data._int);
 		else
-			return cs::to_string(data._num);
+			return csvm::to_string(data._num);
 	}
 } // namespace csvm

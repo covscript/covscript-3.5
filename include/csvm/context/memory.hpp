@@ -38,11 +38,10 @@ namespace csvm
 #endif
 			mutable std::size_t reachable_count = 0;
 
-			heap_pointer() = default;
-			heap_pointer(var val) : data(std::move(val)) {}
-
 		   public:
 			var data;
+			heap_pointer() = default;
+			heap_pointer(var val) : data(std::move(val)) {}
 
 			void mark_reachable() const noexcept
 			{
@@ -61,9 +60,8 @@ namespace csvm
 			map_t<string, std::size_t> slot_map;
 			std::shared_ptr<bool> is_active = std::make_shared<bool>(true);
 
-			domain() = default;
-
 		   public:
+			domain() = default;
 			~domain() { *is_active = false; }
 		};
 
@@ -197,7 +195,7 @@ namespace csvm
 } // namespace csvm
 
 template <>
-void cs_impl::mark_reachable<cs::memory_manager::heap_pointer>(const cs::memory_manager::heap_pointer &ptr)
+void csvm_impl::mark_reachable<csvm::memory_manager::heap_pointer>(const csvm::memory_manager::heap_pointer &ptr)
 {
 	ptr.mark_reachable();
 }

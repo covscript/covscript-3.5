@@ -1,4 +1,4 @@
-#include <covscript/types/numeric.hpp>
+#include <csvm/types/numeric.hpp>
 #include <catch2/catch_all.hpp>
 
 using namespace csvm;

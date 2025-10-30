@@ -1,4 +1,4 @@
-#include <covscript/types/variable.hpp>
+#include <csvm/types/variable.hpp>
 
 #ifdef CSVM_PLATFORM_WIN32
 
@@ -26,12 +26,12 @@
 #pragma comment(lib, "DbgHelp")
 namespace csvm_impl
 {
-	cs::byte_string_t cxx_demangle(const char *name)
+	csvm::byte_string_t cxx_demangle(const char *name)
 	{
 		char buffer[1024];
 		DWORD length = UnDecorateSymbolName(name, buffer, sizeof(buffer), 0);
 		if (length > 0)
-			return cs::byte_string_t(buffer, length);
+			return csvm::byte_string_t(buffer, length);
 		else
 			return name;
 	}
@@ -42,14 +42,14 @@ namespace csvm_impl
 
 namespace csvm_impl
 {
-	cs::byte_string_t cxx_demangle(const char *name)
+	csvm::byte_string_t cxx_demangle(const char *name)
 	{
 		char buffer[1024] = {0};
 		size_t size = sizeof(buffer);
 		int status;
 		char *ret = abi::__cxa_demangle(name, buffer, &size, &status);
 		if (ret != nullptr)
-			return cs::byte_string_t(ret);
+			return csvm::byte_string_t(ret);
 		else
 			return name;
 	}
