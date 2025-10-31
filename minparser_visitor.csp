@@ -32,6 +32,8 @@ class main
     var op_sequence = new array
     var blk_stack = {new domain}
     var pending_jump = new array
+    var string_pool = new hash_map
+    var string_tag = 0
     function insert_op(offset, op)
         op_sequence.push_back(offset : op)
     end
@@ -44,7 +46,7 @@ class main
         blk_stack.front.type = type
     end
     function decl_var(id)
-        gen_op("DECL " + id)
+        gen_op("DECL STR:" + this.get_string_tag(id))
         --stack_offset
         link map = blk_stack.front.decl_map
         if map.exist(id)
@@ -82,22 +84,36 @@ class main
             insert_op(op.key, op.value + " " + op_offset)
         end
     end
-    function get_op_sequence()
+    function get_str_segment()
+        var ops = new array
+        foreach it in string_pool
+            ops.push_back(it)
+        end
+        ops.sort([](lhs, rhs)->lhs.key < rhs.key)
+        var seg = new array
+        seg.push_back("SEGM STRING")
+        foreach it in ops
+            seg.push_back(to_string(it.key.size) + " " + it.key)
+        end
+        seg.push_back("SEGM END")
+        return seg
+    end
+    function get_code_segment()
         if stack_offset != 0
             system.out.println("Debug: Generation error, stack != 0: " + stack_offset)
         end
-        var seq = op_sequence
-        seq.push_back(seq.size : "HALT")
-        seq.sort([](lhs, rhs)->lhs.key < rhs.key)
-        var ops = new array
+        var ops = op_sequence
+        ops.sort([](lhs, rhs)->lhs.key < rhs.key)
+        var seg = new array
+        seg.push_back("SEGM CODE")
         var tag_map = new array
-        foreach it in seq
+        foreach it in ops
             if it.value != "SKIP"
-                tag_map[it.key] = ops.size
-                ops.push_back(it.value)
+                tag_map[it.key] = seg.size
+                seg.push_back(it.value)
             end
         end
-        foreach it in ops
+        foreach it in seg
             var op_code = it.split({' '})
             switch op_code[0]
                 case "JMP_"
@@ -111,7 +127,17 @@ class main
                 end
             end
         end
-        return ops
+        seg.push_back("SEGM END")
+        return seg
+    end
+    function get_string_tag(str)
+        if string_pool.exist(str)
+            return string_pool[str]
+        else
+            var tag = ++string_tag
+            string_pool.insert(str, tag)
+            return tag
+        end
     end
     function print_indent()
         foreach i in range(indent) do target.print('\t')
@@ -401,7 +427,7 @@ class main
     function visit_add_expr(nodes)
         var idx = 0
         # Recursive Visit mul-expr
-        var lhs = nodes[idx++].nodes
+        link lhs = nodes[idx++].nodes
         var op = null
         # Optional
         if idx < nodes.size && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "+" || typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "-")
@@ -527,7 +553,8 @@ class main
             if !matched && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].type == "str")
                 matched = true
                 # Visit str token
-                gen_op("PUSH " + nodes[idx++].data)
+                link str = nodes[idx++].data
+                gen_op("PSTR " + get_string_tag(str.substr(1, str.size - 2)))
                 ++stack_offset
                 # Optional
                 if idx < nodes.size && (typeid nodes[idx] == typeid parsergen.syntax_tree && nodes[idx].root == "index")
@@ -629,7 +656,8 @@ class main
             if !matched && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].type == "id")
                 matched = true
                 # Visit id token
-                gen_op("LOAD " + nodes[idx++].data)
+                link id = nodes[idx++].data
+                gen_op("LOAD STR:" + get_string_tag(id))
                 ++stack_offset
             end
             if !matched && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "(")
@@ -676,25 +704,25 @@ class main
             if !matched && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].type == "num")
                 matched = true
                 # Visit num token
-                gen_op("PUSH " + nodes[idx++].data)
+                gen_op("PNUM " + nodes[idx++].data)
                 ++stack_offset
             end
             if !matched && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "null")
                 matched = true
                 # Visit term "null"
-                ++idx; gen_op("PUSH null")
+                ++idx; gen_op("PUSH CONST:NULL")
                 ++stack_offset
             end
             if !matched && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "true")
                 matched = true
                 # Visit term "true"
-                ++idx; gen_op("PUSH true")
+                ++idx; gen_op("PUSH CONST:TRUE")
                 ++stack_offset
             end
             if !matched && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "false")
                 matched = true
                 # Visit term "false"
-                ++idx; gen_op("PUSH false")
+                ++idx; gen_op("PUSH CONST:FALSE")
                 ++stack_offset
             end
             if !matched
@@ -924,7 +952,7 @@ class main
         var idx = 0
         # Recursive Visit add-expr
         # this.visit_add_expr(nodes[idx++].nodes)
-        var lhs = nodes[idx++].nodes
+        link lhs = nodes[idx++].nodes
         var op = null
         # Optional
         if idx < nodes.size && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == ">" || typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "<" || typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == ">=" || typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "<=")
@@ -1104,7 +1132,7 @@ class main
             if !matched && (typeid nodes[idx] == typeid parsergen.syntax_tree && nodes[idx].root == "cond-expr")
                 matched = true
                 # Recursive Visit cond-expr
-                var lhs = nodes[idx++].nodes
+                link lhs = nodes[idx++].nodes
                 # Optional
                 if idx < nodes.size && (typeid nodes[idx] == typeid parsergen.syntax_tree && nodes[idx].root == "asi-op")
                     # Recursive Visit asi-op
@@ -1190,7 +1218,7 @@ class main
     function visit_logic_or_expr(nodes)
         var idx = 0
         # Recursive Visit logic-and-expr
-        this.visit_logic_and_expr(nodes[idx++].nodes)
+        link lhs = nodes[idx++].nodes
         # Optional
         if idx < nodes.size && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "||" || typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "or")
             # Condition
@@ -1199,12 +1227,12 @@ class main
                 if !matched && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "||")
                     matched = true
                     # Visit term "||"
-                    ++idx; target.print("||")
+                    ++idx; # target.print("||")
                 end
                 if !matched && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "or")
                     matched = true
                     # Visit term "or"
-                    ++idx; target.print("or")
+                    ++idx; # target.print("or")
                 end
                 if !matched
                 	# Error
@@ -1213,12 +1241,17 @@ class main
             end
             # Recursive Visit logic-or-expr
             this.visit_logic_or_expr(nodes[idx++].nodes)
+            this.visit_logic_and_expr(lhs)
+            gen_op("OPER OR")
+            --stack_offset
+        else
+            this.visit_logic_and_expr(lhs)
         end
     end
     function visit_equal_expr(nodes)
         var idx = 0
         # Recursive Visit relat-expr
-        var lhs = nodes[idx++].nodes
+        link lhs = nodes[idx++].nodes
         var op = null
         # Optional
         if idx < nodes.size && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "==" || typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "!=" || typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "is" || typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "not")
@@ -1262,7 +1295,7 @@ class main
     function visit_mul_expr(nodes)
         var idx = 0
         # Recursive Visit conv-expr
-        var lhs = nodes[idx++].nodes
+        link lhs = nodes[idx++].nodes
         var op = null
         # Optional
         if idx < nodes.size && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "*" || typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "/" || typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "%" || typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "^")
@@ -1522,7 +1555,7 @@ class main
     function visit_logic_and_expr(nodes)
         var idx = 0
         # Recursive Visit equal-expr
-        this.visit_equal_expr(nodes[idx++].nodes)
+        link lhs = nodes[idx++].nodes
         # Optional
         if idx < nodes.size && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "&&" || typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "and")
             # Condition
@@ -1545,6 +1578,11 @@ class main
             end
             # Recursive Visit logic-and-expr
             this.visit_logic_and_expr(nodes[idx++].nodes)
+            this.visit_equal_expr(lhs)
+            gen_op("OPER AND")
+            --stack_offset
+        else
+            this.visit_equal_expr(lhs)
         end
     end
     function run(os, ast)
