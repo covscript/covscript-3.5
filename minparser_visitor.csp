@@ -28,6 +28,7 @@ class main
     var target = system.out
     var indent = -1
     var op_offset = 0
+    var stack_offset = 0
     var op_sequence = new array
     var blk_stack = {new domain}
     var pending_jump = new array
@@ -44,6 +45,7 @@ class main
     end
     function decl_var(id)
         gen_op("DECL " + id)
+        --stack_offset
         link map = blk_stack.front.decl_map
         if map.exist(id)
             target.println("Error: variable " + id + "redefined")
@@ -81,6 +83,9 @@ class main
         end
     end
     function get_op_sequence()
+        if stack_offset != 0
+            system.out.println("Debug: Generation error, stack != 0: " + stack_offset)
+        end
         var seq = op_sequence
         seq.push_back(seq.size : "HALT")
         seq.sort([](lhs, rhs)->lhs.key < rhs.key)
@@ -95,7 +100,7 @@ class main
         foreach it in ops
             var op_code = it.split({' '})
             switch op_code[0]
-                case "JUMP"
+                case "JMP_"
                     it = op_code[0] + " " + tag_map[to_integer(op_code[1])]
                 end
                 case "JMPT"
@@ -139,7 +144,7 @@ class main
         # Optional
         if idx < nodes.size && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == ",")
             # Visit term ","
-            ++idx; target.print(",")
+            ++idx; # target.print(",")
             # Recursive Visit expr
             this.visit_expr(nodes[idx++].nodes)
         end
@@ -422,6 +427,7 @@ class main
             this.visit_add_expr(nodes[idx++].nodes)
             this.visit_mul_expr(lhs)
             gen_op(op)
+            --stack_offset 
         else
             this.visit_mul_expr(lhs)
         end
@@ -522,6 +528,7 @@ class main
                 matched = true
                 # Visit str token
                 gen_op("PUSH " + nodes[idx++].data)
+                ++stack_offset
                 # Optional
                 if idx < nodes.size && (typeid nodes[idx] == typeid parsergen.syntax_tree && nodes[idx].root == "index")
                     # Recursive Visit index
@@ -623,6 +630,7 @@ class main
                 matched = true
                 # Visit id token
                 gen_op("LOAD " + nodes[idx++].data)
+                ++stack_offset
             end
             if !matched && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "(")
                 matched = true
@@ -669,21 +677,25 @@ class main
                 matched = true
                 # Visit num token
                 gen_op("PUSH " + nodes[idx++].data)
+                ++stack_offset
             end
             if !matched && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "null")
                 matched = true
                 # Visit term "null"
                 ++idx; gen_op("PUSH null")
+                ++stack_offset
             end
             if !matched && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "true")
                 matched = true
                 # Visit term "true"
                 ++idx; gen_op("PUSH true")
+                ++stack_offset
             end
             if !matched && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "false")
                 matched = true
                 # Visit term "false"
                 ++idx; gen_op("PUSH false")
+                ++stack_offset
             end
             if !matched
             	# Error
@@ -710,27 +722,31 @@ class main
     function visit_array(nodes)
         var idx = 0
         # Visit term "{"
-        ++idx; target.print("{")
+        ++idx; # target.print("{")
+        var ss = stack_offset
         # Optional
         if idx < nodes.size && (typeid nodes[idx] == typeid parsergen.syntax_tree && nodes[idx].root == "expr")
             # Recursive Visit expr
             this.visit_expr(nodes[idx++].nodes)
         end
         # Visit term "}"
-        ++idx; target.print("}")
+        ++idx; # target.print("}")
+        gen_op("FOLD " + (stack_offset - ss))
+        stack_offset = ss + 1
     end
     function visit_fcall(nodes)
         var idx = 0
         # Visit term "("
         ++idx; #target.print("(")
         # Optional
-        var op_args = op_offset
+        var ss = stack_offset
         if idx < nodes.size && (typeid nodes[idx] == typeid parsergen.syntax_tree && nodes[idx].root == "expr")
             # Recursive Visit expr
             this.visit_expr(nodes[idx++].nodes)
         end
         # Visit term ")"
-        ++idx; gen_op("CALL " + (op_offset - op_args))
+        ++idx; gen_op("CALL " + (stack_offset - ss))
+        stack_offset = ss
     end
     function visit_bind_expr(nodes)
         var idx = 0
@@ -828,41 +844,49 @@ class main
                 matched = true
                 # Visit term "="
                 ++idx; gen_op("OPER ASI") # target.print("=")
+                --stack_offset 
             end
             if !matched && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == ":=")
                 matched = true
                 # Visit term ":="
                 ++idx; gen_op("OPER LINKASI") #target.print(":=")
+                --stack_offset 
             end
             if !matched && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "+=")
                 matched = true
                 # Visit term "+="
                 ++idx; gen_op("OPER ADDASI") #target.print("+=")
+                --stack_offset 
             end
             if !matched && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "-=")
                 matched = true
                 # Visit term "-="
                 ++idx; gen_op("OPER SUBASI") #target.print("-=")
+                --stack_offset 
             end
             if !matched && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "*=")
                 matched = true
                 # Visit term "*="
                 ++idx; gen_op("OPER MULASI") #target.print("*=")
+                --stack_offset 
             end
             if !matched && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "/=")
                 matched = true
                 # Visit term "/="
                 ++idx; gen_op("OPER DIVASI") #target.print("/=")
+                --stack_offset 
             end
             if !matched && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "%=")
                 matched = true
                 # Visit term "%="
                 ++idx; gen_op("OPER MODASI") #target.print("%=")
+                --stack_offset 
             end
             if !matched && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "^=")
                 matched = true
                 # Visit term "^="
                 ++idx; gen_op("OPER POWASI") #target.print("^=")
+                --stack_offset 
             end
             if !matched
             	# Error
@@ -936,6 +960,7 @@ class main
             this.visit_relat_expr(nodes[idx++].nodes)
             this.visit_add_expr(lhs)
             gen_op(op.toupper())
+            --stack_offset 
         else
             this.visit_add_expr(lhs)
         end
@@ -1106,12 +1131,12 @@ class main
             if !matched && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "break")
                 matched = true
                 # Visit term "break"
-                ++idx; jump_end("JUMP", domain_type.loop) #target.print("break")
+                ++idx; jump_end("JMP_", domain_type.loop) #target.print("break")
             end
             if !matched && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "continue")
                 matched = true
                 # Visit term "continue"
-                ++idx; jump_begin("JUMP", domain_type.loop) #target.print("continue")
+                ++idx; jump_begin("JMP_", domain_type.loop) #target.print("continue")
             end
             if !matched
             	# Error
@@ -1229,6 +1254,7 @@ class main
             this.visit_equal_expr(nodes[idx++].nodes)
             this.visit_relat_expr(lhs)
             gen_op(op)
+            --stack_offset 
         else
             this.visit_relat_expr(lhs)
         end
@@ -1272,6 +1298,7 @@ class main
             this.visit_mul_expr(nodes[idx++].nodes)
             this.visit_conv_expr(lhs)
             gen_op(op)
+            --stack_offset 
         else
             this.visit_conv_expr(lhs)
         end
@@ -1458,6 +1485,7 @@ class main
         this.visit_stmts(nodes[idx++].nodes)
         end_blk()
         insert_op(cur_op, "JMPF " + op_offset)
+        --stack_offset
         # Repeat
         while idx < nodes.size && (typeid nodes[idx] == typeid parsergen.syntax_tree && nodes[idx].root == "else-stmt")
             # Recursive Visit else-stmt
@@ -1475,7 +1503,12 @@ class main
     function visit_expr_stmt(nodes)
         var idx = 0
         # Recursive Visit expr
+        var ss = stack_offset
         this.visit_expr(nodes[idx++].nodes)
+        while stack_offset > ss
+            gen_op("POP_")
+            --stack_offset
+        end
         # Recursive Visit endline
         this.visit_endline(nodes[idx++].nodes)
     end
