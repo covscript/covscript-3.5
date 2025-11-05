@@ -934,22 +934,22 @@ class main
                 if !matched && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == ">")
                     matched = true
                     # Visit term ">"
-                    ++idx; op = "oper abocmp"
+                    ++idx; op = "OPER ABOCMP"
                 end
                 if !matched && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "<")
                     matched = true
                     # Visit term "<"
-                    ++idx; op = "oper undcmp"
+                    ++idx; op = "OPER UNDCMP"
                 end
                 if !matched && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == ">=")
                     matched = true
                     # Visit term ">="
-                    ++idx; op = "oper aepcmp"
+                    ++idx; op = "OPER AEQCMP"
                 end
                 if !matched && (typeid nodes[idx] == typeid parsergen.token_type && nodes[idx].data == "<=")
                     matched = true
                     # Visit term "<="
-                    ++idx; op = "oper ueqcmp"
+                    ++idx; op = "OPER UEQCMP"
                 end
                 if !matched
                 	# Error
@@ -959,7 +959,7 @@ class main
             # Recursive Visit relat-expr
             this.visit_relat_expr(nodes[idx++].nodes)
             this.visit_add_expr(lhs)
-            gen_op(op.toupper())
+            gen_op(op)
             --stack_offset 
         else
             this.visit_add_expr(lhs)

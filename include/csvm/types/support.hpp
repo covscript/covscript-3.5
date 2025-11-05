@@ -306,7 +306,7 @@ namespace csvm_impl
 			compare, // lhs == rhs
 			abocmp,  // lhs > rhs
 			undcmp,  // lhs < rhs
-			aepcmp,  // lhs >= rhs
+			aeqcmp,  // lhs >= rhs
 			ueqcmp,  // lhs <= rhs
 			index,   // data[index]
 			access,  // data.member
